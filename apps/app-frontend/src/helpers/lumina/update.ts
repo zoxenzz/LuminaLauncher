@@ -2,6 +2,7 @@ import { getVersion } from '@tauri-apps/api/app'
 import { ref } from 'vue'
 
 import { getOS, initUpdateLauncher, isDev } from '@/helpers/utils.js'
+import { get } from '@/helpers/settings.ts'
 
 export type LauncherReleaseAsset = {
 	name: string
@@ -14,15 +15,13 @@ export type LauncherRelease = {
 	assets: LauncherReleaseAsset[]
 }
 
-// import.meta.env uses `vite.config.ts`
-// Environments can be configured in `packages/app-lib/` directory.
-// 👉 Replace YOUR_GITHUB_USERNAME with your actual GitHub username before releasing!
-export const LAUNCHER_REPOSITORY_URL = `${import.meta.env.GITHUB_URL}YOUR_GITHUB_USERNAME/LuminaLauncher/`
+export const LAUNCHER_REPOSITORY_URL = `${import.meta.env.GITHUB_URL}zoxenzz/LuminaLauncher/`
 export const LAUNCHER_RELEASES_URL = `${LAUNCHER_REPOSITORY_URL}releases`
-const LAUNCHER_LATEST_RELEASE_API = `${import.meta.env.GITHUB_API_URL}repos/YOUR_GITHUB_USERNAME/LuminaLauncher/releases/latest`
+const LAUNCHER_LATEST_RELEASE_API = `${import.meta.env.GITHUB_API_URL}repos/zoxenzz/LuminaLauncher/releases/latest`
 
 export const isUpdateInstalling = ref(false)
 export const isUpdateAvailable = ref(false)
+export const isAutoUpdating = ref(false)
 export const latestLauncherRelease = ref<LauncherRelease | null>(null)
 
 const currentOS = ref('')
@@ -70,9 +69,14 @@ export async function fetchRemote(): Promise<void> {
 				console.debug('Normalized local version is', localVersion)
 				console.debug('Raw remote version is', remoteData.tag_name)
 				console.debug('Normalized remote version is', remoteVersion)
-				console.debug('Local version parts are', parseVersionParts(localVersion))
-				console.debug('Remote version parts are', parseVersionParts(remoteVersion))
 				console.debug('Version comparison result is', versionComparison)
+			}
+
+			if (isUpdateAvailable.value) {
+				const settings = await get()
+				if (settings.auto_download_updates) {
+					await performAutoUpdate()
+				}
 			}
 		} else {
 			isUpdateAvailable.value = false
@@ -93,7 +97,26 @@ export async function fetchRemote(): Promise<void> {
 		latestLauncherRelease.value = null
 		isUpdateAvailable.value = false
 		isUpdateInstalling.value = false
+		isAutoUpdating.value = false
 	}
+}
+
+async function performAutoUpdate() {
+	if (isUpdateInstalling.value || isAutoUpdating.value) {
+		return
+	}
+
+	const settings = await get()
+	if (!settings.auto_download_updates) {
+		return
+	}
+
+	isAutoUpdating.value = true
+	const result = await downloadLatestRelease()
+	if (!result) {
+		console.error('Auto-update failed')
+	}
+	isAutoUpdating.value = false
 }
 
 export async function downloadLatestRelease(): Promise<boolean> {

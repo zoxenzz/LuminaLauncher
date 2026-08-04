@@ -81,7 +81,7 @@ import WindowControls from '@/components/ui/WindowControls.vue'
 import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
 import { config } from '@/config'
 // This code line modified by Lumina Launcher
-import { fetchRemote, isUpdateAvailable } from '@/helpers/lumina/update'
+import { fetchRemote, isAutoUpdating, isUpdateAvailable } from '@/helpers/lumina/update'
 import { check_reachable } from '@/helpers/auth.js'
 import { get_user, get_version } from '@/helpers/cache.js'
 import {
@@ -265,19 +265,28 @@ onMounted(async () => {
 	// This code line modified by Lumina Launcher
 	await fetchRemote()
 	if (isUpdateAvailable.value) {
-		addPopupNotification({
-			title: formatMessage(messages.launcherUpdateAvailableTitle),
-			text: formatMessage(messages.launcherUpdateAvailableText),
-			type: 'info',
-			autoCloseMs: 12000,
-			buttons: [
-				{
-					label: formatMessage(messages.launcherUpdateAvailableAction),
-					action: () => settingsModal.value?.showUpdateModal?.(),
-					color: 'brand',
-				},
-			],
-		})
+		if (isAutoUpdating.value) {
+			addPopupNotification({
+				title: formatMessage(messages.launcherAutoUpdatingTitle),
+				text: formatMessage(messages.launcherAutoUpdatingText),
+				type: 'info',
+				autoCloseMs: 8000,
+			})
+		} else {
+			addPopupNotification({
+				title: formatMessage(messages.launcherUpdateAvailableTitle),
+				text: formatMessage(messages.launcherUpdateAvailableText),
+				type: 'info',
+				autoCloseMs: 12000,
+				buttons: [
+					{
+						label: formatMessage(messages.launcherUpdateAvailableAction),
+						action: () => settingsModal.value?.showUpdateModal?.(),
+						color: 'brand',
+					},
+				],
+			})
+		}
 	}
 
 	document.querySelector('body').addEventListener('click', handleClick)
@@ -313,6 +322,14 @@ const messages = defineMessages({
 	launcherUpdateAvailableAction: {
 		id: 'lumina.app.launcher-update.available.action',
 		defaultMessage: 'View update',
+	},
+	launcherAutoUpdatingTitle: {
+		id: 'lumina.app.launcher-update.auto.title',
+		defaultMessage: 'Updating Lumina Launcher',
+	},
+	launcherAutoUpdatingText: {
+		id: 'lumina.app.launcher-update.auto.text',
+		defaultMessage: 'A new version is being downloaded and installed automatically.',
 	},
 })
 

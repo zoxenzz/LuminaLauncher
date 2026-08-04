@@ -62,4 +62,14 @@ watch(
 		</div>
 		<Toggle id="disable-discord-rpc" v-model="settings.discord_rpc" />
 	</div>
+
+	<div class="mt-4 flex items-center justify-between gap-4">
+		<div>
+			<h2 class="m-0 text-lg font-semibold text-contrast">Automatic updates</h2>
+			<p class="m-0 mt-1 text-sm">
+				Automatically download and install Lumina Launcher updates when they become available.
+			</p>
+		</div>
+		<Toggle id="auto-download-updates" v-model="settings.auto_download_updates" />
+	</div>
 </template>
