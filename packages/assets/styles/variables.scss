@@ -300,14 +300,18 @@ html {
 	--color-gold-300: #ffd64c;
 	--color-gold-400: #ffc422;
 	--color-gold-500: #f5b301;
-	--color-gold-600: #d98d00;
-	--color-gold-700: #b46a05;
-	--color-gold-800: #92520c;
-	--color-gold-900: #78430e;
+	--color-gold-600: #d99c00;
+	--color-gold-700: #b87700;
+	--color-gold-800: #955d00;
+	--color-gold-900: #7a4c06;
 	--color-gold-950: #452300;
-	--color-gold: var(--color-gold-400);
-	--color-gold-highlight: rgba(255, 196, 34, 0.25);
-	--color-gold-bg: rgba(255, 196, 34, 0.2);
+	--color-gold: var(--color-gold-500);
+	--color-gold-highlight: rgba(255, 196, 34, 0.22);
+	--color-gold-bg: rgba(255, 196, 34, 0.18);
+
+	--color-copper: #e07a3d;
+	--color-copper-highlight: rgba(224, 122, 61, 0.22);
+	--color-copper-bg: rgba(224, 122, 61, 0.12);
 
 	--color-blue-50: #eef6ff;
 	--color-blue-100: #daeaff;

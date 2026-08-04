@@ -499,12 +499,19 @@ a:not(.no-click-animation),
 	position: relative;
 	min-height: var(--font-size-2xl);
 
-	background-color: var(--surface-3);
-	border-radius: var(--radius-lg);
-	border: 1px solid var(--surface-4);
-
+	background: linear-gradient(135deg, var(--surface-3) 0%, var(--surface-2-5) 100%);
+	border-radius: var(--radius-xl);
+	border: 1px solid hsla(40, 15%, 60%, 0.08);
+	box-shadow:
+		var(--shadow-card),
+		0 0 0 0 transparent;
 	margin-bottom: var(--gap-md);
 	outline: 2px solid transparent;
+	backdrop-filter: blur(8px);
+	transition:
+		transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+		box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+		border-color 0.2s ease;
 
 	.card__overlay {
 		position: absolute;
@@ -526,6 +533,14 @@ a:not(.no-click-animation),
 			color: var(--color-blue);
 			text-decoration: underline;
 		}
+	}
+
+	&:hover {
+		transform: translateY(-3px);
+		box-shadow:
+			var(--shadow-card),
+			var(--shadow-glow);
+		border-color: hsla(40, 20%, 60%, 0.14);
 	}
 }
 

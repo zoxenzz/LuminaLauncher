@@ -1,0 +1,167 @@
+// ============================================
+// Lumina Launcher Design System Overrides
+// ============================================
+// This file provides Lumina-specific design tokens
+// that override the base Modrinth/Omorphia system.
+// Import after omorphia.scss to ensure overrides win.
+
+// --------------------------------------------
+// Typography
+// --------------------------------------------
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+	--font-standard:
+		'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, Segoe UI, Oxygen, Ubuntu, Roboto, Cantarell,
+		Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+	--font-heading:
+		'Outfit', -apple-system, BlinkMacSystemFont, Segoe UI, Oxygen, Ubuntu, Roboto, Cantarell,
+		Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+}
+
+// --------------------------------------------
+// Warm Dark Surfaces
+// --------------------------------------------
+.dark-mode,
+.dark,
+:root[data-theme='dark'] {
+	--surface-1: #1a1816;
+	--surface-1-5: #1e1c1a;
+	--surface-2: #23211e;
+	--surface-2-5: #28261f;
+	--surface-3: #2e2b25;
+	--surface-4: #36332c;
+	--surface-5: #3f3b33;
+
+	--color-bg: var(--surface-1);
+	--color-raised-bg: var(--surface-3);
+	--color-super-raised-bg: var(--surface-4);
+
+	--color-text-primary: #f5f0e8;
+	--color-text-default: #c4bfb3;
+	--color-text-tertiary: #9a9488;
+
+	--color-button-bg: var(--surface-4);
+	--color-button-border: rgba(221, 156, 0, 0.12);
+	--color-divider: var(--surface-5);
+	--color-divider-dark: var(--surface-5);
+
+	--color-brand: #f5b301;
+	--color-brand-highlight: rgba(255, 196, 34, 0.22);
+	--color-brand-shadow: rgba(255, 196, 34, 0.55);
+
+	--color-copper: #e07a3d;
+	--color-copper-highlight: rgba(224, 122, 61, 0.22);
+	--color-copper-bg: rgba(224, 122, 61, 0.12);
+
+	--shadow-inset-sm: inset 0px -1px 1px hsla(30, 20%, 8%, 0.35);
+	--shadow-inset: inset 0px -2px 2px hsla(30, 20%, 8%, 0.2);
+	--shadow-inset-lg: inset 0px -2px 2px hsla(30, 20%, 8%, 0.25);
+
+	--shadow-raised-lg: 0px 4px 12px hsla(30, 15%, 5%, 0.35);
+	--shadow-floating:
+		0px 0px 0px 0px hsla(0, 0%, 0%, 0),
+		0px 0px 0px 0px hsla(0, 0%, 0%, 0),
+		0px 8px 16px -4px hsla(30, 15%, 5%, 0.35),
+		0px 4px 8px -2px hsla(30, 15%, 5%, 0.25);
+
+	--shadow-card:
+		rgba(0, 0, 0, 0.3) 0px 3px 6px 0px,
+		0px 0px 0px 1px hsla(40, 15%, 50%, 0.06);
+
+	--shadow-glow: 0 0 20px hsla(40, 95%, 55%, 0.15);
+
+	--brand-gradient-bg: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--color-brand) 16%, transparent) 0%,
+		color-mix(in srgb, var(--color-brand) 6%, transparent) 60%,
+		transparent 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		color-mix(in srgb, var(--color-brand) 20%, transparent) 0%,
+		color-mix(in srgb, var(--color-brand) 8%, transparent) 100%
+	);
+	--brand-gradient-button: rgba(255, 255, 255, 0.06);
+	--brand-gradient-border: color-mix(in srgb, var(--color-brand) 14%, transparent);
+	--brand-gradient-fade-out-color: linear-gradient(
+		to bottom,
+		color-mix(in srgb, var(--color-brand) 0%, transparent),
+		color-mix(in srgb, var(--color-brand) 12%, transparent)
+	);
+
+	--loading-bar-gradient: linear-gradient(
+		to right,
+		var(--color-brand) 0%,
+		color-mix(in srgb, var(--color-brand) 70%, #fff5d6) 100%
+	);
+}
+
+// --------------------------------------------
+// OLED Warm
+// --------------------------------------------
+.oled-mode {
+	--surface-1: #0f0e0c;
+	--surface-1-5: #131210;
+	--surface-2: #181614;
+	--surface-2-5: #1d1b17;
+	--surface-3: #23211c;
+	--surface-4: #2c2923;
+	--surface-5: #35322a;
+
+	--brand-gradient-bg: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--color-brand) 12%, transparent) 0%,
+		color-mix(in srgb, var(--color-brand) 5%, transparent) 60%,
+		transparent 100%
+	);
+	--brand-gradient-strong-bg: linear-gradient(
+		270deg,
+		color-mix(in srgb, var(--color-brand) 14%, transparent) 0%,
+		color-mix(in srgb, var(--color-brand) 6%, transparent) 100%
+	);
+
+	--color-gradient-button-bg: linear-gradient(180deg, #1d1b17 0%, #23211c 100%);
+}
+
+// --------------------------------------------
+// Light Warm
+// --------------------------------------------
+.light-mode,
+.light {
+	--surface-1: #f7f4ef;
+	--surface-1-5: #faf7f2;
+	--surface-2: #fdfaf4;
+	--surface-2-5: #f0ece4;
+	--surface-3: #faf7f0;
+	--surface-4: #ffffff;
+	--surface-5: #e8e2d8;
+
+	--color-text-primary: #1a1816;
+	--color-text-default: #3d3830;
+	--color-text-tertiary: #7a7268;
+
+	--color-button-bg: var(--surface-4);
+	--color-button-border: rgba(180, 140, 80, 0.2);
+	--color-divider: var(--surface-5);
+	--color-divider-dark: #d5cfc4;
+
+	--color-brand: #d99c00;
+	--color-brand-highlight: rgba(221, 156, 0, 0.18);
+	--color-brand-shadow: rgba(180, 120, 0, 0.3);
+
+	--color-copper: #c96a2e;
+	--color-copper-highlight: rgba(201, 106, 46, 0.18);
+	--color-copper-bg: rgba(201, 106, 46, 0.1);
+
+	--shadow-card:
+		rgba(120, 100, 60, 0.08) 0px 2px 4px 0px,
+		0px 0px 0px 1px hsla(40, 15%, 70%, 0.1);
+
+	--brand-gradient-bg: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--color-brand) 10%, transparent) 0%,
+		color-mix(in srgb, var(--color-brand) 4%, transparent) 60%,
+		transparent 100%
+	);
+}

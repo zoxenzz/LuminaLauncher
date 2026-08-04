@@ -1347,8 +1347,11 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	grid-template-columns: auto 1fr;
 	grid-template-rows: auto 1fr;
 	position: relative;
-	//z-index: 0;
-	background-color: var(--color-raised-bg);
+	background:
+		radial-gradient(ellipse at 20% 0%, hsla(38, 95%, 55%, 0.06) 0%, transparent 55%),
+		radial-gradient(ellipse at 80% 100%, hsla(22, 80%, 45%, 0.04) 0%, transparent 55%),
+		linear-gradient(160deg, #1f1c18 0%, #1a1816 40%, #161412 100%);
+	background-attachment: fixed;
 	height: 100vh;
 }
 
@@ -1377,8 +1380,12 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	right: 0;
 	bottom: 0;
 	height: calc(100vh - var(--top-bar-height));
-	background-color: var(--color-bg);
+	background:
+		radial-gradient(ellipse at 50% 0%, hsla(38, 95%, 55%, 0.03) 0%, transparent 50%),
+		var(--color-bg);
 	border-top-left-radius: var(--radius-xl);
+	border-top-right-radius: var(--radius-xl);
+	box-shadow: 0 0 40px hsla(0, 0%, 0%, 0.15);
 
 	display: grid;
 	grid-template-columns: 1fr 0px;
@@ -1399,7 +1406,14 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	width: 300px;
 	position: relative;
 	height: calc(100vh - var(--top-bar-height));
-	background: var(--brand-gradient-bg);
+	margin: 0.75rem 0.75rem 0.75rem 0;
+	background:
+		linear-gradient(180deg, hsla(38, 60%, 55%, 0.06) 0%, transparent 40%),
+		var(--brand-gradient-bg);
+	border-radius: var(--radius-xl);
+	border: 1px solid var(--brand-gradient-border);
+	backdrop-filter: blur(12px);
+	box-shadow: var(--shadow-floating);
 
 	--color-button-bg: var(--brand-gradient-button);
 	--color-button-bg-hover: var(--brand-gradient-border);
@@ -1408,14 +1422,14 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 }
 
 .app-sidebar::after {
-	// content: ''; // Fix dirty gray line
 	position: absolute;
 	bottom: 250px;
 	left: 0;
 	right: 0;
 	height: 5rem;
-	background: var(--brand-gradient-fade-out-color);
+	background: linear-gradient(to bottom, transparent, var(--brand-gradient-fade-out-color));
 	pointer-events: none;
+	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
 }
 
 .app-sidebar.has-plus::after {
@@ -1440,13 +1454,14 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 
 .app-sidebar::before {
 	content: '';
-	box-shadow: -15px 0 15px -15px rgba(0, 0, 0, 0.1) inset;
+	box-shadow: -12px 0 20px -12px rgba(0, 0, 0, 0.25) inset;
 	top: 0;
 	bottom: 0;
-	left: -2rem;
-	width: 2rem;
+	left: -1.5rem;
+	width: 1.5rem;
 	position: absolute;
 	pointer-events: none;
+	border-radius: var(--radius-xl) 0 0 var(--radius-xl);
 }
 
 .app-viewport {
@@ -1466,10 +1481,10 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	right: calc(-1 * var(--left-bar-width));
 	bottom: calc(-1 * var(--left-bar-width));
 	border-radius: var(--radius-xl);
-	box-shadow: 1px 1px 15px rgba(0, 0, 0, 0.1) inset;
-	border-color: var(--surface-5);
-	border-width: 1px;
-	border-style: solid;
+	border: 1px solid hsla(40, 20%, 60%, 0.08);
+	box-shadow:
+		0 0 0 1px hsla(0, 0%, 0%, 0.1),
+		1px 1px 20px rgba(0, 0, 0, 0.15) inset;
 	pointer-events: none;
 }
 
@@ -1538,6 +1553,40 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 		100% {
 			scale: 1.5;
 		}
+	}
+
+	@keyframes lumina-fade-in-up {
+		from {
+			opacity: 0;
+			transform: translateY(12px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes lumina-shimmer {
+		0% {
+			background-position: -200% center;
+		}
+		100% {
+			background-position: 200% center;
+		}
+	}
+
+	@keyframes lumina-pulse-glow {
+		0%, 100% {
+			box-shadow: 0 0 8px hsla(40, 95%, 55%, 0.15);
+		}
+		50% {
+			box-shadow: 0 0 18px hsla(40, 95%, 55%, 0.3);
+		}
+	}
+
+	.lumina-animate-in {
+		animation: lumina-fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		opacity: 0;
 	}
 
 	.nav-button-animated-enter-from {
