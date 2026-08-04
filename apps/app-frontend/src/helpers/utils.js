@@ -1,0 +1,112 @@
+import { invoke } from '@tauri-apps/api/core'
+
+import { get_full_path, get_mod_full_path } from '@/helpers/profile'
+
+/**
+ * Resolves a promise but never takes longer than `ms` milliseconds.
+ * Returns `fallback` when the timeout wins, so callers can degrade gracefully
+ * instead of hanging the UI on a slow/unreachable network request.
+ */
+export function withTimeout(promise, ms, fallback) {
+	return new Promise((resolve) => {
+		const timer = setTimeout(() => resolve(fallback), ms)
+		promise.then(
+			(value) => {
+				clearTimeout(timer)
+				resolve(value)
+			},
+			() => {
+				clearTimeout(timer)
+				resolve(fallback)
+			},
+		)
+	})
+}
+
+export async function isDev() {
+	return await invoke('is_dev')
+}
+
+export async function areUpdatesEnabled() {
+	return await invoke('are_updates_enabled')
+}
+
+export async function getUpdateSize(updateRid) {
+	return await invoke('get_update_size', { rid: updateRid })
+}
+
+export async function enqueueUpdateForInstallation(updateRid) {
+	return await invoke('enqueue_update_for_installation', { rid: updateRid })
+}
+
+export async function removeEnqueuedUpdate() {
+	return await invoke('remove_enqueued_update')
+}
+
+export async function setRestartAfterPendingUpdate(should_restart) {
+	return await invoke('set_restart_after_pending_update', { shouldRestart: should_restart })
+}
+
+// One of 'Windows', 'Linux', 'MacOS'
+export async function getOS() {
+	return await invoke('plugin:utils|get_os')
+}
+
+// This code is modified by Lumina Launcher
+export async function initUpdateLauncher(downloadUrl, filename, osType, autoUpdateSupported) {
+	console.log('Downloading build', downloadUrl, filename, osType, autoUpdateSupported)
+	return await invoke('plugin:utils|init_update_launcher', {
+		downloadUrl,
+		filename,
+		osType,
+		autoUpdateSupported,
+	})
+}
+
+export async function isNetworkMetered() {
+	return await invoke('plugin:utils|is_network_metered')
+}
+
+export async function openPath(path) {
+	return await invoke('plugin:utils|open_path', { path })
+}
+
+export async function highlightInFolder(path) {
+	return await invoke('plugin:utils|highlight_in_folder', { path })
+}
+
+export async function showLauncherLogsFolder() {
+	return await invoke('plugin:utils|show_launcher_logs_folder', {})
+}
+
+// Opens a profile's folder in the OS file explorer
+export async function showProfileInFolder(path) {
+	const fullPath = await get_full_path(path)
+	return await openPath(fullPath)
+}
+
+export async function highlightModInProfile(profilePath, projectPath) {
+	const fullPath = await get_mod_full_path(profilePath, projectPath)
+	return await highlightInFolder(fullPath)
+}
+
+export async function restartApp() {
+	return await invoke('restart_app')
+}
+
+export const releaseColor = (releaseType) => {
+	switch (releaseType) {
+		case 'release':
+			return 'green'
+		case 'beta':
+			return 'orange'
+		case 'alpha':
+			return 'red'
+		default:
+			return ''
+	}
+}
+
+export async function copyToClipboard(text) {
+	await navigator.clipboard.writeText(text)
+}
