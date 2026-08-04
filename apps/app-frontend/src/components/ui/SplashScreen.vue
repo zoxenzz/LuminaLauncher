@@ -7,7 +7,6 @@
 				<span v-if="message">{{ message }}</span>
 			</div>
 			<div class="gradient-bg" data-tauri-drag-region></div>
-			<div class="cube-bg"></div>
 			<div class="base-bg"></div>
 			<div v-if="stuck" class="splash-debug">
 				<span>pending={{ loading.pending }} bar={{ loading.barEnabled }}</span>
@@ -141,22 +140,6 @@ loading_listener(async (e) => {
 		linear-gradient(180deg, rgba(255, 251, 0, 0.28) 0%, rgba(0, 0, 0, 0.5) 97.29%),
 		linear-gradient(0deg, rgba(22, 24, 28, 0.64), rgba(27, 28, 22, 0.64));
 	z-index: 9997;
-}
-
-.cube-bg {
-	position: absolute;
-
-	left: 50%;
-	top: 50%;
-	transform: translate(-50%, -50%);
-
-	width: 180vw;
-	height: 180vh;
-	opacity: 0.8;
-	background: #16181c url('@/assets/loading/cube.png') center no-repeat;
-	background-size: contain;
-
-	z-index: 9996;
 }
 
 .base-bg {
