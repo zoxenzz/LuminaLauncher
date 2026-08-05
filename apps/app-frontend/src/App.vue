@@ -36,7 +36,7 @@ import {
 	CreationFlowModal,
 	defineMessages,
 	I18nDebugPanel,
-	LoadingBar,
+	LoadingIndicator,
 	NotificationPanel,
 	OverflowMenu,
 	PopupNotificationPanel,
@@ -56,9 +56,8 @@ import { getCurrentWindow } from '@tauri-apps/api/window'
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
-import { saveWindowState, StateFlags } from '@tauri-apps/plugin-window-state'
 import { $fetch } from 'ofetch'
-import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import { computed, nextTick, onErrorCaptured, onMounted, onUnmounted, provide, ref, watch } from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import AccountsCard from '@/components/ui/AccountsCard.vue'
@@ -78,10 +77,9 @@ import NavButton from '@/components/ui/NavButton.vue'
 import QuickInstanceSwitcher from '@/components/ui/QuickInstanceSwitcher.vue'
 import SplashScreen from '@/components/ui/SplashScreen.vue'
 import WindowControls from '@/components/ui/WindowControls.vue'
+import { cardExpandActive } from '@/composables/useCardExpandTransition'
 import { useCheckDisableMouseover } from '@/composables/macCssFix.js'
 import { config } from '@/config'
-// This code line modified by Lumina Launcher
-import { fetchRemote, isAutoUpdating, isUpdateAvailable } from '@/helpers/lumina/update'
 import { check_reachable } from '@/helpers/auth.js'
 import { get_user, get_version } from '@/helpers/cache.js'
 import {
@@ -90,6 +88,8 @@ import {
 	notification_listener,
 	warning_listener,
 } from '@/helpers/events.js'
+// This code line modified by Lumina Launcher
+import { fetchRemote, isAutoUpdating, isUpdateAvailable } from '@/helpers/lumina/update'
 import { create_profile_and_install_from_file } from '@/helpers/pack'
 import { list } from '@/helpers/profile.js'
 import { mergeUrlQuery, parseModrinthLink } from '@/helpers/project-links.ts'
@@ -115,7 +115,6 @@ import { AppPopupNotificationManager } from './providers/app-popup-notifications
 const themeStore = useTheming()
 const router = useRouter()
 const route = useRoute()
-const APP_LEFT_NAV_WIDTH = '4rem'
 const APP_SIDEBAR_WIDTH = 300
 const INTERCOM_BUBBLE_DEFAULT_PADDING = 20
 const credentials = ref()
@@ -179,7 +178,8 @@ const tauriApiClient = new TauriModrinthClient({
 	],
 })
 provideModrinthClient(tauriApiClient)
-const { data: authenticatedModrinthUser } = useQuery({
+// Kept for its side effect: warms the authenticated-user cache once signed in
+useQuery({
 	queryKey: computed(() => ['authenticated-user', 'campaigns', credentials.value?.user?.id]),
 	queryFn: () => tauriApiClient.labrinth.users_v3.getAuthenticated(),
 	enabled: () => !!credentials.value?.session,
@@ -188,7 +188,8 @@ const { data: authenticatedModrinthUser } = useQuery({
 providePageContext({
 	hierarchicalSidebarAvailable: ref(true),
 	floatingActionBarOffsets: {
-		left: ref(APP_LEFT_NAV_WIDTH),
+		// No left nav rail anymore — the dock floats at the bottom, so bars span full width
+		left: ref('0px'),
 		right: computed(() => (sidebarVisible.value ? `${APP_SIDEBAR_WIDTH}px` : '0px')),
 	},
 	intercomBubble: hostingIntercom.intercomBubble,
@@ -296,6 +297,7 @@ onMounted(async () => {
 onUnmounted(async () => {
 	document.querySelector('body').removeEventListener('click', handleClick)
 	document.querySelector('body').removeEventListener('auxclick', handleAuxClick)
+	window.removeEventListener('resize', updateDockIndicator)
 	unsubscribeSidebarToggle()
 })
 
@@ -351,7 +353,6 @@ async function setupApp() {
 
 	const {
 		native_decorations,
-		theme,
 		locale,
 		collapsed_navigation,
 		hide_nametag_skins_page,
@@ -381,8 +382,8 @@ async function setupApp() {
 	nativeDecorations.value = native_decorations
 	if (os.value !== 'MacOS') await getCurrentWindow().setDecorations(native_decorations)
 
-	themeStore.setThemeState(theme)
-	themeStore.initAccentColor()
+	// Lumina is dark-only and locked to the gold brand accent — themes are not supported
+	themeStore.setThemeState()
 	themeStore.collapsedNavigation = collapsed_navigation
 	themeStore.advancedRendering = advanced_rendering
 	themeStore.hideNametagSkinsPage = hide_nametag_skins_page
@@ -451,7 +452,14 @@ const stateFailed = ref(false)
 const debugErrors = ref([])
 window.__appErrors__ = debugErrors.value
 window.addEventListener('error', (event) => {
-	debugErrors.value.push(`[window.error] ${event.message}`)
+	const message = String(event.message ?? '')
+	// ResizeObserver loop warnings are benign browser notifications (e.g. fired when
+	// toggling the sidebar reshuffles observed containers) — don't surface them.
+	if (
+		/ResizeObserver loop (completed with undelivered notifications|limit exceeded)/i.test(message)
+	)
+		return
+	debugErrors.value.push(`[window.error] ${message}`)
 })
 initialize_state()
 	.then(() => {
@@ -469,18 +477,51 @@ initialize_state()
 		error.showError(err, null, false, 'state_init')
 	})
 
-const handleClose = async () => {
-	await saveWindowState(StateFlags.ALL)
-	await getCurrentWindow().close()
-}
-
 const loading = setupLoadingStateProvider()
 loading.setEnabled(false)
 let initialLoadToken = loading.begin()
-let routerToken = null
-let suspenseToken = null
 
-let suspensePending = false
+const suspensePending = ref(false)
+
+function onSuspensePending() {
+	suspensePending.value = true
+}
+
+function onSuspenseResolve() {
+	suspensePending.value = false
+}
+
+let routerToken = null
+
+router.beforeEach(() => {
+	if (!routerToken) {
+		routerToken = loading.begin()
+	}
+})
+
+router.afterEach(() => {
+	if (routerToken) {
+		loading.end(routerToken)
+		routerToken = null
+	}
+})
+
+router.onError(() => {
+	if (routerToken) {
+		loading.end(routerToken)
+		routerToken = null
+	}
+})
+
+onErrorCaptured((err, instance, info) => {
+	console.error('[App] Suspense error captured:', err, info)
+	suspensePending.value = false
+	if (routerToken) {
+		loading.end(routerToken)
+		routerToken = null
+	}
+	return false
+})
 
 const sidebarOverlayScrollbarsOptions = Object.freeze({
 	overflow: {
@@ -489,78 +530,64 @@ const sidebarOverlayScrollbarsOptions = Object.freeze({
 	},
 })
 
-router.beforeEach(() => {
-	suspensePending = false
-	if (routerToken) loading.end(routerToken)
-	routerToken = loading.begin()
-})
-router.afterEach((to, from, failure) => {
-	setTimeout(() => {
-		if (!suspensePending && stateInitialized.value) {
-			if (initialLoadToken) {
-				loading.end(initialLoadToken)
-				initialLoadToken = null
-			}
-			if (routerToken) {
-				loading.end(routerToken)
-				routerToken = null
-			}
-		}
-	}, 100)
-})
+// Sliding active indicator for the bottom dock — one line that glides between icons
+const dockNavCluster = ref(null)
+const dockActiveIndicator = ref(null)
 
-let watchdogWarned = false
-setInterval(() => {
-	if (loading.pending.value && stateInitialized.value) {
-		if (!watchdogWarned) {
-			watchdogWarned = true
-			console.warn('[splash] watchdog: force-ending stale loading tokens')
-		}
+function updateDockIndicator() {
+	const cluster = dockNavCluster.value
+	const indicator = dockActiveIndicator.value
+	if (!cluster || !indicator) return
+
+	// Prefer the exact/subpage match first: vue-router applies
+	// `router-link-active` to the root Home link on *every* route (prefix
+	// match), so reading that class first would pin the indicator to Home.
+	const active =
+		cluster.querySelector('.router-link-exact-active, .subpage-active') ??
+		cluster.querySelector('.router-link-active')
+	if (!active) {
+		indicator.style.opacity = '0'
+		return
+	}
+
+	indicator.style.width = `${active.offsetWidth}px`
+	indicator.style.height = `${active.offsetHeight}px`
+	indicator.style.left = `${active.offsetLeft}px`
+	indicator.style.top = `${active.offsetTop}px`
+	indicator.style.opacity = '1'
+}
+
+watch(
+	() => route.fullPath,
+	async () => {
+		await nextTick()
+		updateDockIndicator()
+	},
+)
+
+watch(
+	() => themeStore.featureFlags.worlds_tab,
+	async () => {
+		await nextTick()
+		updateDockIndicator()
+	},
+)
+
+watch(stateInitialized, async (ready) => {
+	if (ready) {
+		await nextTick()
+		updateDockIndicator()
 		if (initialLoadToken) {
 			loading.end(initialLoadToken)
 			initialLoadToken = null
 		}
-		if (routerToken) {
-			loading.end(routerToken)
-			routerToken = null
-		}
-		if (suspenseToken) {
-			loading.end(suspenseToken)
-			suspenseToken = null
-		}
 	}
-}, 5000)
-
-function onSuspensePending() {
-	suspensePending = true
-	if (suspenseToken) loading.end(suspenseToken)
-	suspenseToken = loading.begin()
-}
-
-function onSuspenseResolve() {
-	if (suspenseToken) {
-		loading.end(suspenseToken)
-		suspenseToken = null
-	}
-	if (routerToken) {
-		loading.end(routerToken)
-		routerToken = null
-	}
-}
+})
 
 const queryClient = useQueryClient()
 
 watch(stateInitialized, (ready) => {
 	if (ready) {
-		if (initialLoadToken) {
-			loading.end(initialLoadToken)
-			initialLoadToken = null
-		}
-		if (routerToken) {
-			loading.end(routerToken)
-			routerToken = null
-		}
-
 		queryClient.prefetchQuery({
 			queryKey: ['servers'],
 			queryFn: async () => {
@@ -695,6 +722,7 @@ async function fetchIntercomToken() {
 
 onMounted(() => {
 	invoke('show_window')
+	window.addEventListener('resize', updateDockIndicator)
 
 	error.setErrorModal(errorModal.value)
 	error.setMinecraftAuthErrorModal(minecraftAuthErrorModal.value)
@@ -1027,114 +1055,119 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			@browse-modpacks="handleBrowseModpacks"
 		/>
 		<UnknownPackWarningModal ref="unknownPackWarningModal" />
-		<div
-			class="app-grid-navbar bg-bg-raised flex flex-col p-[0.5rem] pt-0 gap-[0.5rem] w-[--left-bar-width]"
-		>
-			<NavButton v-tooltip.right="'Home'" to="/">
-				<HomeIcon />
-			</NavButton>
-			<NavButton v-if="themeStore.featureFlags.worlds_tab" v-tooltip.right="'Worlds'" to="/worlds">
-				<WorldIcon />
-			</NavButton>
-			<NavButton
-				v-tooltip.right="'Discover content'"
-				to="/browse/modpack"
-				:is-primary="() => route.path.startsWith('/browse') && !route.query.i"
-				:is-subpage="(route) => route.path.startsWith('/project') && !route.query.i"
-			>
-				<CompassIcon />
-			</NavButton>
-			<NavButton v-tooltip.right="'Skin selector'" to="/skins">
-				<ChangeSkinIcon />
-			</NavButton>
-			<NavButton
-				v-tooltip.right="'Library'"
-				to="/library"
-				:is-primary="(r) => r.path === '/library' || r.path === '/library'"
-				:is-subpage="
-					() =>
-						route.path.startsWith('/instance') ||
-						((route.path.startsWith('/browse') || route.path.startsWith('/project')) &&
-							route.query.i)
-				"
-			>
-				<LibraryIcon />
-			</NavButton>
-			<NavButton
-				v-tooltip.right="'Hosting'"
-				to="/hosting"
-				:is-primary="
-					(r) =>
-						r.path === '/hosting' || r.path === '/hosting/manage' || r.path === '/hosting/manage/'
-				"
-				:is-subpage="(r) => r.path.startsWith('/hosting/manage/') && r.path !== '/hosting/manage/'"
-			>
-				<ServerStackIcon />
-			</NavButton>
-			<div class="h-px w-6 mx-auto my-2 bg-surface-5"></div>
-			<suspense>
-				<QuickInstanceSwitcher />
-			</suspense>
-			<NavButton
-				v-tooltip.right="'Create new instance'"
-				:to="() => installationModal?.show()"
-				:disabled="offline"
-			>
-				<PlusIcon />
-			</NavButton>
-			<div class="flex flex-grow"></div>
-			<!-- This code line modified by Lumina Launcher -->
-			<template v-if="isUpdateAvailable">
-				<NavButton
-					v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-					class="neon-icon pulse"
-					:to="() => $refs.settingsModal.show()"
-				>
-					<SettingsIcon />
+		<div class="app-grid-navbar" role="navigation" aria-label="Primary">
+			<div ref="dockNavCluster" class="dock-cluster dock-cluster-primary">
+				<div ref="dockActiveIndicator" class="dock-active-indicator" aria-hidden="true"></div>
+				<NavButton v-tooltip.top="'Home'" to="/">
+					<HomeIcon />
 				</NavButton>
-			</template>
-			<template v-else>
-				<NavButton
-					v-tooltip.right="formatMessage(commonMessages.settingsLabel)"
-					:to="() => $refs.settingsModal.show()"
-				>
-					<SettingsIcon />
+				<NavButton v-if="themeStore.featureFlags.worlds_tab" v-tooltip.top="'Worlds'" to="/worlds">
+					<WorldIcon />
 				</NavButton>
-			</template>
-			<OverflowMenu
-				v-if="discord.isAuthorized"
-				v-tooltip.right="`Discord account`"
-				class="w-12 h-12 text-primary rounded-full flex items-center justify-center text-2xl transition-all bg-transparent hover:bg-button-bg hover:text-contrast border-0 cursor-pointer"
-				:options="[
-					{
-						id: 'view-profile',
-						action: () => discord.openProfile(),
-					},
-					{
-						id: 'sign-out',
-						action: () => discord.logout(),
-						color: 'danger',
-					},
-				]"
-				placement="right-end"
-			>
-				<Avatar :src="discord.avatarUrl(32) ?? ''" alt="" size="32px" circle />
-				<template #view-profile>
-					<UserIcon />
-					<span class="inline-flex items-center gap-1">
-						Signed in as
-						<span class="inline-flex items-center gap-1 text-contrast font-semibold">
-							<Avatar :src="discord.avatarUrl(20) ?? ''" alt="" size="20px" circle />
-							{{ discord.username }}
-						</span>
-					</span>
-					<ExternalIcon />
+				<NavButton
+					v-tooltip.top="'Discover content'"
+					to="/browse/modpack"
+					:is-primary="() => route.path.startsWith('/browse') && !route.query.i"
+					:is-subpage="(route) => route.path.startsWith('/project') && !route.query.i"
+				>
+					<CompassIcon />
+				</NavButton>
+				<NavButton v-tooltip.top="'Skin selector'" to="/skins">
+					<ChangeSkinIcon />
+				</NavButton>
+				<NavButton
+					v-tooltip.top="'Library'"
+					to="/library"
+					:is-primary="(r) => r.path === '/library' || r.path === '/library'"
+					:is-subpage="
+						() =>
+							route.path.startsWith('/instance') ||
+							route.path.startsWith('/library/') ||
+							((route.path.startsWith('/browse') || route.path.startsWith('/project')) &&
+								route.query.i)
+					"
+				>
+					<LibraryIcon />
+				</NavButton>
+				<NavButton
+					v-tooltip.top="'Hosting'"
+					to="/hosting"
+					:is-primary="
+						(r) =>
+							r.path === '/hosting' || r.path === '/hosting/manage' || r.path === '/hosting/manage/'
+					"
+					:is-subpage="
+						(r) => r.path.startsWith('/hosting/manage/') && r.path !== '/hosting/manage/'
+					"
+				>
+					<ServerStackIcon />
+				</NavButton>
+			</div>
+			<div class="nav-section-divider" aria-hidden="true"></div>
+			<div class="dock-cluster dock-cluster-secondary">
+				<suspense>
+					<QuickInstanceSwitcher />
+				</suspense>
+				<NavButton
+					v-tooltip.top="'Create new instance'"
+					:to="() => installationModal?.show()"
+					:disabled="offline"
+				>
+					<PlusIcon />
+				</NavButton>
+				<!-- This code line modified by Lumina Launcher -->
+				<template v-if="isUpdateAvailable">
+					<NavButton
+						v-tooltip.top="formatMessage(commonMessages.settingsLabel)"
+						class="dock-update-pulse"
+						:to="() => $refs.settingsModal.show()"
+					>
+						<SettingsIcon />
+					</NavButton>
 				</template>
-				<template #sign-out> <LogOutIcon /> Sign out </template>
-			</OverflowMenu>
-			<NavButton v-else v-tooltip.right="'Sign in with Discord'" :to="() => signIn()">
-				<LogInIcon class="text-brand" />
-			</NavButton>
+				<template v-else>
+					<NavButton
+						v-tooltip.top="formatMessage(commonMessages.settingsLabel)"
+						:to="() => $refs.settingsModal.show()"
+					>
+						<SettingsIcon />
+					</NavButton>
+				</template>
+				<OverflowMenu
+					v-if="discord.isAuthorized"
+					v-tooltip.top="`Discord account`"
+					class="nav-account-button"
+					:options="[
+						{
+							id: 'view-profile',
+							action: () => discord.openProfile(),
+						},
+						{
+							id: 'sign-out',
+							action: () => discord.logout(),
+							color: 'danger',
+						},
+					]"
+					placement="top-end"
+				>
+					<Avatar :src="discord.avatarUrl(32) ?? ''" alt="" size="32px" circle />
+					<template #view-profile>
+						<UserIcon />
+						<span class="inline-flex items-center gap-1">
+							Signed in as
+							<span class="inline-flex items-center gap-1 text-contrast font-semibold">
+								<Avatar :src="discord.avatarUrl(20) ?? ''" alt="" size="20px" circle />
+								{{ discord.username }}
+							</span>
+						</span>
+						<ExternalIcon />
+					</template>
+					<template #sign-out> <LogOutIcon /> Sign out </template>
+				</OverflowMenu>
+				<NavButton v-else v-tooltip.top="'Sign in with Discord'" :to="() => signIn()">
+					<LogInIcon class="text-brand" />
+				</NavButton>
+			</div>
 		</div>
 		<div data-tauri-drag-region class="app-grid-statusbar bg-bg-raised h-[--top-bar-height] flex">
 			<div data-tauri-drag-region class="flex min-w-0 flex-1 overflow-hidden p-3">
@@ -1211,14 +1244,15 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 				</div>
 			</transition>
 			<div
-				class="loading-indicator-container h-8 fixed z-50 pointer-events-none"
+				v-if="loading.pending.value && !suspensePending"
+				class="loading-indicator-container absolute z-50 pointer-events-none"
 				:style="{
-					top: 'calc(var(--top-bar-height))',
-					left: 'calc(var(--left-bar-width))',
-					width: 'calc(100% - var(--left-bar-width) - var(--right-bar-width))',
+					top: '50%',
+					left: '50%',
+					transform: 'translate(-50%, -50%)',
 				}"
 			>
-				<LoadingBar position="absolute" />
+				<LoadingIndicator />
 			</div>
 			<div
 				v-if="themeStore.featureFlags.page_path"
@@ -1243,14 +1277,32 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			</Admonition>
 			<RouterView v-slot="{ Component }">
 				<template v-if="Component">
-					<Suspense @pending="onSuspensePending" @resolve="onSuspenseResolve">
-						<component :is="Component"></component>
-					</Suspense>
+					<!-- While a card-expand is morphing, disable the page fade so the new
+					   page mounts instantly (see useCardExpandTransition for why).
+					   Keying the Suspense by route path is what keeps rapid navigation
+					   safe: with mode="out-in" an un-keyed child gets patched in place,
+					   and a second click mid-transition corrupts the enter/leave state
+					   (the new page is left invisible until the next navigation).
+					   A fresh key makes every navigation a distinct element, so the
+					   transition always runs to completion. -->
+					<Transition :css="!cardExpandActive" name="page" mode="out-in">
+						<Suspense :key="route.path" @pending="onSuspensePending" @resolve="onSuspenseResolve">
+							<component :is="Component"></component>
+							<!-- Never leave the viewport empty while an async page loads:
+							   that empty state is the "black screen" users hit when
+							   clicking between pages faster than they resolve. -->
+							<template #fallback>
+								<div class="loading-indicator-container page-suspense-fallback">
+									<LoadingIndicator />
+								</div>
+							</template>
+						</Suspense>
+					</Transition>
 				</template>
 			</RouterView>
 		</div>
 		<div
-			class="app-sidebar mt-px shrink-0 flex flex-col border-0 border-l-[1px] border-[--brand-gradient-border] border-solid"
+			class="app-sidebar mt-px shrink-0 flex flex-col overflow-hidden"
 			:class="{ 'has-plus': hasPlus }"
 		>
 			<div
@@ -1330,35 +1382,164 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 </template>
 
 <style lang="scss" scoped>
-// This code line modified by Lumina Launcher
-@import '../../../packages/assets/styles/lumina/neon-icon.scss';
-// This code line modified by Lumina Launcher
-@import '../../../packages/assets/styles/lumina/neon-text.scss';
 .app-grid-layout,
 .app-contents {
 	--top-bar-height: 3rem;
-	--left-bar-width: 4rem;
+	--bottom-bar-height: 4.5rem;
 	--right-bar-width: 300px;
 }
 
 .app-grid-layout {
 	display: grid;
-	grid-template: 'status status' 'nav dummy';
-	grid-template-columns: auto 1fr;
-	grid-template-rows: auto 1fr;
+	grid-template: 'status' / 1fr;
 	position: relative;
-	background:
-		radial-gradient(ellipse at 20% 0%, hsla(38, 95%, 55%, 0.06) 0%, transparent 55%),
-		radial-gradient(ellipse at 80% 100%, hsla(22, 80%, 45%, 0.04) 0%, transparent 55%),
-		linear-gradient(160deg, #1f1c18 0%, #1a1816 40%, #161412 100%);
-	background-attachment: fixed;
+	background: #0d0c0b;
 	height: 100vh;
 }
 
 .app-grid-navbar {
-	grid-area: nav;
+	/* Floating bottom dock — out of the grid flow, overlays the content */
+	position: fixed;
+	z-index: 60;
+	bottom: 0.75rem;
+	left: 0;
+	right: 0;
+	width: max-content;
+	margin-inline: auto;
+
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	flex-wrap: nowrap;
+	gap: 0.25rem;
+	--dock-btn-size: 3rem;
+	max-width: calc(100vw - 1rem);
+	padding: calc((var(--bottom-bar-height) - var(--dock-btn-size)) / 2) 0.75rem;
+
+	border-radius: 999px;
+	/* Frosted glass: translucent charcoal so content blurs through behind the pill */
+	background: rgba(13, 12, 11, 0.62);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow:
+		0 20px 48px rgba(0, 0, 0, 0.45),
+		0 4px 12px rgba(0, 0, 0, 0.28);
+	backdrop-filter: blur(28px) saturate(175%);
+	-webkit-backdrop-filter: blur(28px) saturate(175%);
+
+	animation: lumina-fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dock-cluster {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.dock-cluster-primary {
 	position: relative;
-	z-index: 2;
+}
+
+.dock-active-indicator {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 0;
+	height: 0;
+	border-radius: 0.9rem;
+	background: color-mix(in srgb, var(--color-brand) 20%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-brand) 26%, transparent);
+	opacity: 0;
+	pointer-events: none;
+	z-index: 0;
+	/* Solid pill glides between icons — motion carries the cue, not light bloom */
+	transition:
+		left 280ms cubic-bezier(0.22, 1, 0.36, 1),
+		top 280ms cubic-bezier(0.22, 1, 0.36, 1),
+		width 280ms cubic-bezier(0.22, 1, 0.36, 1),
+		height 280ms cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 200ms ease;
+}
+
+.dock-cluster-primary :deep(.nav-button-link) {
+	position: relative;
+	z-index: 1;
+}
+
+/* Primary cluster uses the sliding pill; per-button ::after pills would double up */
+.dock-cluster-primary :deep(.nav-button-link)::after {
+	display: none;
+}
+
+/* If backdrop blur isn't available, fall back to a near-solid pill so icons stay legible */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.app-grid-navbar {
+		background: rgba(16, 14, 12, 0.94);
+		border-color: rgba(255, 255, 255, 0.06);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.dock-active-indicator {
+		transition: none;
+	}
+
+	.dock-update-pulse {
+		animation: none;
+	}
+}
+
+.nav-section-divider {
+	width: 1px;
+	height: calc(var(--dock-btn-size) * 0.85);
+	margin: 0 0.5rem;
+	background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+}
+
+.nav-account-button {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--dock-btn-size, 3rem);
+	height: var(--dock-btn-size, 3rem);
+	border: 1px solid transparent;
+	border-radius: 0.9rem;
+	background: transparent;
+	color: var(--color-text-default);
+	transition:
+		transform 150ms ease,
+		border-color 150ms ease;
+}
+
+.nav-account-button:hover {
+	transform: scale(1.06);
+	border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+}
+
+@media (max-width: 1024px) {
+	.app-grid-navbar {
+		--dock-btn-size: 2.5rem;
+		gap: 0.125rem;
+		padding: calc((var(--bottom-bar-height) - var(--dock-btn-size)) / 2) 0.5rem;
+	}
+
+	.nav-section-divider {
+		margin: 0 0.3rem;
+	}
+}
+
+@media (max-width: 720px) {
+	.app-grid-navbar {
+		gap: 0;
+		padding: calc((var(--bottom-bar-height) - var(--dock-btn-size)) / 2) 0.375rem;
+	}
+
+	.dock-cluster {
+		gap: 0;
+	}
+
+	.nav-section-divider {
+		margin: 0 0.2rem;
+	}
 }
 
 .app-grid-statusbar {
@@ -1368,6 +1549,18 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	z-index: 2;
 }
 
+/* Hairline under the drag bar so the draggable region reads as such */
+.app-grid-statusbar::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: 1px;
+	background: rgba(255, 255, 255, 0.06);
+	pointer-events: none;
+}
+
 [data-tauri-drag-region-exclude] {
 	-webkit-app-region: no-drag;
 }
@@ -1375,45 +1568,50 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 .app-contents {
 	position: absolute;
 	z-index: 1;
-	left: var(--left-bar-width);
-	top: var(--top-bar-height);
-	right: 0;
-	bottom: 0;
-	height: calc(100vh - var(--top-bar-height));
-	background:
-		radial-gradient(ellipse at 50% 0%, hsla(38, 95%, 55%, 0.03) 0%, transparent 50%),
-		var(--color-bg);
-	border-top-left-radius: var(--radius-xl);
-	border-top-right-radius: var(--radius-xl);
-	box-shadow: 0 0 40px hsla(0, 0%, 0%, 0.15);
+	left: 0.5rem;
+	top: calc(var(--top-bar-height) + 0.5rem);
+	right: 0.5rem;
+	bottom: 0.5rem;
+	height: auto;
+	border-radius: 1.125rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 16%, transparent);
+	background: rgba(16, 14, 12, 0.97);
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.07),
+		0 20px 50px rgba(0, 0, 0, 0.5);
+	overflow: hidden;
 
 	display: grid;
 	grid-template-columns: 1fr 0px;
-	// transition: grid-template-columns 0.4s ease-in-out;
+	grid-template-rows: 1fr;
+	gap: 0.75rem;
 
 	&.sidebar-enabled {
 		grid-template-columns: 1fr 300px;
 	}
 }
 
-.loading-indicator-container {
-	border-top-left-radius: var(--radius-xl);
-	overflow: hidden;
-}
-
 .app-sidebar {
-	overflow: visible;
+	overflow: hidden;
 	width: 300px;
 	position: relative;
-	height: calc(100vh - var(--top-bar-height));
-	margin: 0.75rem 0.75rem 0.75rem 0;
+	height: auto;
+	margin: 0.5rem 0.5rem 0.5rem 0;
 	background:
-		linear-gradient(180deg, hsla(38, 60%, 55%, 0.06) 0%, transparent 40%),
-		var(--brand-gradient-bg);
-	border-radius: var(--radius-xl);
-	border: 1px solid var(--brand-gradient-border);
-	backdrop-filter: blur(12px);
-	box-shadow: var(--shadow-floating);
+		linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--color-brand) 10%, transparent) 0%,
+			transparent 45%
+		),
+		linear-gradient(180deg, rgba(18, 16, 14, 0.92) 0%, rgba(10, 9, 8, 0.9) 100%);
+	border-radius: 1.125rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 16%, transparent);
+	border-right: 0;
+	/* No backdrop-filter: the surface is ~92% opaque and a tall blurred layer
+	   is a known WebView2 black-render trigger. */
+	box-shadow:
+		0 16px 44px rgba(0, 0, 0, 0.3),
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 12%, transparent);
 
 	--color-button-bg: var(--brand-gradient-button);
 	--color-button-bg-hover: var(--brand-gradient-border);
@@ -1427,13 +1625,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	left: 0;
 	right: 0;
 	height: 5rem;
-	background: linear-gradient(to bottom, transparent, var(--brand-gradient-fade-out-color));
+	background: linear-gradient(
+		to bottom,
+		transparent,
+		color-mix(in srgb, var(--color-brand) 10%, transparent)
+	);
 	pointer-events: none;
 	border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-}
-
-.app-sidebar.has-plus::after {
-	display: none;
 }
 
 .disable-advanced-rendering {
@@ -1452,19 +1650,40 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	}
 }
 
-.app-sidebar::before {
-	content: '';
-	box-shadow: -12px 0 20px -12px rgba(0, 0, 0, 0.25) inset;
-	top: 0;
-	bottom: 0;
-	left: -1.5rem;
-	width: 1.5rem;
-	position: absolute;
-	pointer-events: none;
-	border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+.loading-indicator-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+/* In-flow fallback shown inside the RouterView Suspense while an async page
+   loads. Fills the full viewport height and centers the loader so the
+   viewport is never an empty black region between pages. */
+.page-suspense-fallback {
+	min-height: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 2rem;
+	background: rgba(13, 12, 11, 0.5);
+}
+
+/* Compact the route-loading pill. The shell/card must be reached through the
+   container: the `loading-indicator-inline` class lands on the child's root,
+   which never carries this component's scoped attribute, so a descendant
+   selector from it would never match. */
+.loading-indicator-container :deep(.loading-indicator-shell) {
+	width: auto;
+	padding: 0;
+}
+
+.loading-indicator-container :deep(.loading-indicator-card) {
+	padding: 0.6rem 0.8rem;
 }
 
 .app-viewport {
+	position: relative;
 	flex-grow: 1;
 	height: 100%;
 	overflow: auto;
@@ -1473,23 +1692,12 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 }
 
 .app-contents::before {
-	z-index: 30;
+	z-index: 0;
 	content: '';
-	position: fixed;
-	left: var(--left-bar-width);
-	top: var(--top-bar-height);
-	right: calc(-1 * var(--left-bar-width));
-	bottom: calc(-1 * var(--left-bar-width));
-	border-radius: var(--radius-xl);
-	border: 1px solid hsla(40, 20%, 60%, 0.08);
-	box-shadow:
-		0 0 0 1px hsla(0, 0%, 0%, 0.1),
-		1px 1px 20px rgba(0, 0, 0, 0.15) inset;
-	pointer-events: none;
-}
-
-.sidebar-teleport-content {
-	display: contents;
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-brand) 10%, transparent);
 }
 
 .sidebar-default-content {
@@ -1575,17 +1783,35 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 		}
 	}
 
-	@keyframes lumina-pulse-glow {
-		0%, 100% {
-			box-shadow: 0 0 8px hsla(40, 95%, 55%, 0.15);
+	@keyframes lumina-pulse-breathe {
+		0%,
+		100% {
+			opacity: 1;
 		}
 		50% {
-			box-shadow: 0 0 18px hsla(40, 95%, 55%, 0.3);
+			opacity: 0.55;
 		}
 	}
 
 	.lumina-animate-in {
 		animation: lumina-fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		opacity: 0;
+	}
+
+	.dock-update-pulse {
+		animation: lumina-pulse-breathe 2.5s ease-in-out infinite;
+	}
+
+	/* Route changes fade/slide in instead of cutting instantly */
+	.page-enter-active {
+		animation: lumina-fade-in-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+	}
+
+	.page-leave-active {
+		transition: opacity 0.12s ease;
+	}
+
+	.page-leave-to {
 		opacity: 0;
 	}
 
@@ -1634,6 +1860,32 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 
 	.profile-card {
 		right: 8rem;
+	}
+}
+
+/* Card-expand shared-element transition: keep the outgoing page pinned and
+   only animate the element pair sharing a view-transition-name. These rules
+   must live outside scoped styles — View Transition pseudo-elements attach to
+   the document root, which never carries a scoped data attribute. */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation: none;
+}
+
+::view-transition-old(partnered-server-banner) {
+	animation: none;
+}
+
+::view-transition-new(partnered-server-banner) {
+	animation: card-expand-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes card-expand-in {
+	from {
+		opacity: 0.35;
+	}
+	to {
+		opacity: 1;
 	}
 }
 
