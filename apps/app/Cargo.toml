@@ -1,7 +1,7 @@
 [package]
 name = "theseus_gui"
 # The actual version is set by the theseus-build workflow on tagging
-version = "1.0.0-local"
+version = "1.1.0-beta"
 edition.workspace = true
 description = "The Modrinth App is a desktop application for managing your Minecraft mods"
 repository = "https://github.com/modrinth/code/apps/app/"
@@ -21,20 +21,12 @@ native-dialog = { workspace = true }
 paste = { workspace = true }
 path-util = { workspace = true }
 rand = { workspace = true }
-reqwest = { workspace = true, features = [
-  "charset",
-  "json",
-  "rustls-tls-webpki-roots",
-] }
+reqwest = { workspace = true, features = ["charset", "json", "rustls-tls-webpki-roots"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 serde_with = { workspace = true }
 sha2 = { workspace = true }
-tauri = { workspace = true, features = [
-  "devtools",
-  "macos-private-api",
-  "protocol-asset",
-] }
+tauri = { workspace = true, features = ["devtools", "macos-private-api", "protocol-asset"] }
 tauri-plugin-deep-link = { workspace = true }
 tauri-plugin-dialog = { workspace = true }
 tauri-plugin-fs = { workspace = true }
@@ -62,17 +54,15 @@ tauri-plugin-updater = { workspace = true, optional = true }
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation.workspace = true
 core-graphics.workspace = true
-objc2-app-kit = { workspace = true, features = [
-  "NSWindow",
-] }
+objc2-app-kit = { workspace = true, features = ["NSWindow"] }
 
 [target.'cfg(windows)'.dependencies]
 webview2-com.workspace = true
 windows = { workspace = true, features = [
-  "Win32_Foundation",
-  "Win32_Graphics_Dwm",
-  "Win32_Graphics_Gdi",
-  "Win32_UI_WindowsAndMessaging",
+	"Win32_Foundation",
+	"Win32_Graphics_Dwm",
+	"Win32_Graphics_Gdi",
+	"Win32_UI_WindowsAndMessaging",
 ] }
 windows-core.workspace = true
 

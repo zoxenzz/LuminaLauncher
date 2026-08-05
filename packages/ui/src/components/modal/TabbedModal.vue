@@ -77,10 +77,8 @@ defineExpose({ show, hide, selectedTab, setTab })
 		<template v-if="$slots.title" #title>
 			<slot name="title" />
 		</template>
-		<div class="grid grid-cols-[auto_1fr] p-6 pb-3 pr-0">
-			<div
-				class="flex flex-col gap-1 border-solid pr-4 border-0 border-r-[1px] border-divider min-w-[200px]"
-			>
+		<div class="grid grid-cols-[auto_1fr] gap-4 p-6 pb-3 pr-0">
+			<div class="tabbed-modal-sidebar">
 				<component
 					:is="tab.href ? 'a' : 'button'"
 					v-for="(tab, index) in visibleTabs"
@@ -88,7 +86,9 @@ defineExpose({ show, hide, selectedTab, setTab })
 					:href="tab.href ?? undefined"
 					:target="tab.href ? '_blank' : undefined"
 					:rel="tab.href ? 'noopener noreferrer' : undefined"
-					:class="`flex gap-2 items-center text-left rounded-xl px-4 py-2 border-none text-nowrap font-semibold cursor-pointer active:scale-[0.97] transition-all no-underline ${!tab.href && selectedTab === index ? 'bg-button-bgSelected text-button-textSelected' : 'bg-transparent text-button-text hover:bg-button-bg hover:text-contrast'}`"
+					:class="
+						selectedTab === index ? 'tabbed-modal-tab tabbed-modal-tab-active' : 'tabbed-modal-tab'
+					"
 					@click="!tab.href && setTab(index)"
 				>
 					<component :is="tab.icon" class="w-4 h-4 flex-shrink-0" />
@@ -104,7 +104,7 @@ defineExpose({ show, hide, selectedTab, setTab })
 
 				<slot name="footer" />
 			</div>
-			<div class="relative">
+			<div class="tabbed-modal-content">
 				<Transition
 					enter-active-class="transition-all duration-200 ease-out"
 					enter-from-class="opacity-0 max-h-0"
@@ -149,3 +149,73 @@ defineExpose({ show, hide, selectedTab, setTab })
 		</div>
 	</NewModal>
 </template>
+
+<style lang="scss" scoped>
+.tabbed-modal-sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	min-width: 200px;
+	padding: 0.75rem;
+	border-radius: 1.25rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
+		color-mix(in srgb, var(--color-raised-bg) 88%, transparent);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.tabbed-modal-tab {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	width: 100%;
+	text-align: left;
+	white-space: nowrap;
+	border: 1px solid transparent;
+	border-radius: 0.9rem;
+	padding: 0.5rem 0.75rem;
+	background: transparent;
+	color: var(--color-text-default);
+	font: inherit;
+	font-size: 0.95rem;
+	font-weight: 600;
+	text-decoration: none;
+	cursor: pointer;
+	transition:
+		background-color 150ms ease,
+		color 150ms ease,
+		border-color 150ms ease,
+		transform 150ms ease;
+
+	&:hover {
+		background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+		color: var(--color-contrast);
+	}
+}
+
+.tabbed-modal-tab-active {
+	color: var(--color-contrast);
+	border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+	background:
+		radial-gradient(
+			ellipse at center,
+			color-mix(in srgb, var(--color-brand) 18%, transparent),
+			transparent 72%
+		),
+		color-mix(in srgb, var(--color-raised-bg) 55%, transparent);
+	box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-brand) 10%, transparent);
+}
+
+.tabbed-modal-content {
+	position: relative;
+	overflow: hidden;
+	padding: 0.25rem;
+	border-radius: 1.25rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
+		color-mix(in srgb, var(--color-raised-bg) 88%, transparent);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+</style>

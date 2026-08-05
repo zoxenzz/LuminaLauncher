@@ -14,4 +14,7 @@ defineProps({
 		label="Instances"
 		:instances="instances.filter((i) => i.linked_data)"
 	/>
+	<div v-else class="flex items-center justify-center h-full text-color-text-default">
+		<p>No downloaded instances.</p>
+	</div>
 </template>

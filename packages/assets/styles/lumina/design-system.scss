@@ -25,75 +25,73 @@
 .dark-mode,
 .dark,
 :root[data-theme='dark'] {
-	--surface-1: #1a1816;
-	--surface-1-5: #1e1c1a;
-	--surface-2: #23211e;
-	--surface-2-5: #28261f;
-	--surface-3: #2e2b25;
-	--surface-4: #36332c;
-	--surface-5: #3f3b33;
+	--surface-1: #0d0c0b;
+	--surface-1-5: #11100e;
+	--surface-2: #161412;
+	--surface-2-5: #1a1816;
+	--surface-3: #201d19;
+	--surface-4: #27241e;
+	--surface-5: #302c25;
 
 	--color-bg: var(--surface-1);
-	--color-raised-bg: var(--surface-3);
-	--color-super-raised-bg: var(--surface-4);
+	--color-raised-bg: var(--surface-2);
+	--color-super-raised-bg: var(--surface-3);
 
-	--color-text-primary: #f5f0e8;
-	--color-text-default: #c4bfb3;
-	--color-text-tertiary: #9a9488;
+	--color-text-primary: #f6f2ea;
+	--color-text-default: #c8c3b7;
+	--color-text-tertiary: #969083;
 
-	--color-button-bg: var(--surface-4);
-	--color-button-border: rgba(221, 156, 0, 0.12);
-	--color-divider: var(--surface-5);
-	--color-divider-dark: var(--surface-5);
+	--color-button-bg: var(--surface-3);
+	--color-button-border: rgba(223, 183, 67, 0.14);
+	--color-divider: rgba(255, 255, 255, 0.07);
+	--color-divider-dark: rgba(255, 255, 255, 0.05);
 
-	--color-brand: #f5b301;
-	--color-brand-highlight: rgba(255, 196, 34, 0.22);
-	--color-brand-shadow: rgba(255, 196, 34, 0.55);
+	--color-brand: #dfb743;
+	--color-brand-highlight: rgba(223, 183, 67, 0.15);
+	--color-brand-shadow: rgba(0, 0, 0, 0.45);
 
-	--color-copper: #e07a3d;
-	--color-copper-highlight: rgba(224, 122, 61, 0.22);
-	--color-copper-bg: rgba(224, 122, 61, 0.12);
+	--color-copper: #d87d3e;
+	--color-copper-highlight: rgba(216, 125, 62, 0.18);
+	--color-copper-bg: rgba(216, 125, 62, 0.1);
 
-	--shadow-inset-sm: inset 0px -1px 1px hsla(30, 20%, 8%, 0.35);
-	--shadow-inset: inset 0px -2px 2px hsla(30, 20%, 8%, 0.2);
-	--shadow-inset-lg: inset 0px -2px 2px hsla(30, 20%, 8%, 0.25);
+	--shadow-inset-sm: inset 0px -1px 1px rgba(0, 0, 0, 0.4);
+	--shadow-inset: inset 0px -2px 2px rgba(0, 0, 0, 0.3);
+	--shadow-inset-lg: inset 0px -2px 4px rgba(0, 0, 0, 0.4);
 
-	--shadow-raised-lg: 0px 4px 12px hsla(30, 15%, 5%, 0.35);
+	--shadow-raised-lg: 0px 8px 24px rgba(0, 0, 0, 0.45);
 	--shadow-floating:
-		0px 0px 0px 0px hsla(0, 0%, 0%, 0),
-		0px 0px 0px 0px hsla(0, 0%, 0%, 0),
-		0px 8px 16px -4px hsla(30, 15%, 5%, 0.35),
-		0px 4px 8px -2px hsla(30, 15%, 5%, 0.25);
+		0px 0px 0px 1px rgba(255, 255, 255, 0.08),
+		0px 12px 32px -4px rgba(0, 0, 0, 0.6);
 
 	--shadow-card:
-		rgba(0, 0, 0, 0.3) 0px 3px 6px 0px,
-		0px 0px 0px 1px hsla(40, 15%, 50%, 0.06);
+		0px 0px 0px 1px rgba(255, 255, 255, 0.07),
+		0px 6px 18px rgba(0, 0, 0, 0.4);
 
-	--shadow-glow: 0 0 20px hsla(40, 95%, 55%, 0.15);
+	--shadow-glow: 0 8px 24px rgba(0, 0, 0, 0.5);
 
 	--brand-gradient-bg: linear-gradient(
 		135deg,
-		color-mix(in srgb, var(--color-brand) 16%, transparent) 0%,
-		color-mix(in srgb, var(--color-brand) 6%, transparent) 60%,
+		rgba(223, 183, 67, 0.12) 0%,
+		rgba(223, 183, 67, 0.03) 60%,
 		transparent 100%
 	);
 	--brand-gradient-strong-bg: linear-gradient(
 		270deg,
-		color-mix(in srgb, var(--color-brand) 20%, transparent) 0%,
-		color-mix(in srgb, var(--color-brand) 8%, transparent) 100%
+		rgba(223, 183, 67, 0.16) 0%,
+		rgba(223, 183, 67, 0.05) 100%
 	);
 	--brand-gradient-button: rgba(255, 255, 255, 0.06);
-	--brand-gradient-border: color-mix(in srgb, var(--color-brand) 14%, transparent);
+	--brand-gradient-border: rgba(223, 183, 67, 0.16);
 	--brand-gradient-fade-out-color: linear-gradient(
 		to bottom,
-		color-mix(in srgb, var(--color-brand) 0%, transparent),
-		color-mix(in srgb, var(--color-brand) 12%, transparent)
+		transparent,
+		rgba(223, 183, 67, 0.08)
 	);
 
 	--loading-bar-gradient: linear-gradient(
 		to right,
 		var(--color-brand) 0%,
-		color-mix(in srgb, var(--color-brand) 70%, #fff5d6) 100%
+		rgba(245, 225, 160, 0.9) 100%
 	);
 }
 

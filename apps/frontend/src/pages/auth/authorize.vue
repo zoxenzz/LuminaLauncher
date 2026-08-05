@@ -333,9 +333,7 @@ definePageMeta({
 		align-items: center;
 		justify-content: center;
 		font-size: 2rem;
-		user-select: none;
-
-		color: var(--color-primary);
+		user-select: none;			color: var(--color-text-default);
 	}
 }
 

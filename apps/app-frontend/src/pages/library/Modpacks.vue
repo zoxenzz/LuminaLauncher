@@ -44,4 +44,7 @@ const filteredInstances = computed(() =>
 		label="Instances"
 		:instances="filteredInstances"
 	/>
+	<div v-else class="flex items-center justify-center h-full text-color-text-default">
+		<p>No modpacks found.</p>
+	</div>
 </template>

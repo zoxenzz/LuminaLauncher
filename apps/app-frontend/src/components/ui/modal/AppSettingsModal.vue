@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import {
-	LuminaLauncherLogo,
 	CoffeeIcon,
 	DownloadIcon,
 	GameIcon,
 	GaugeIcon,
 	LanguagesIcon,
+	LuminaLauncherLogo,
 	PaintbrushIcon,
 	SettingsIcon,
 	ShieldIcon,
@@ -23,7 +23,7 @@ import {
 } from '@modrinth/ui'
 import { getVersion } from '@tauri-apps/api/app'
 import { platform as getOsPlatform, version as getOsVersion } from '@tauri-apps/plugin-os'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
 import LauncherUpdateModal from '@/components/ui/lumina/LauncherUpdateModal.vue'
 import AppearanceSettings from '@/components/ui/settings/AppearanceSettings.vue'
@@ -33,8 +33,12 @@ import JavaSettings from '@/components/ui/settings/JavaSettings.vue'
 import LanguageSettings from '@/components/ui/settings/LanguageSettings.vue'
 import PrivacySettings from '@/components/ui/settings/PrivacySettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/ResourceManagementSettings.vue'
+import {
+	isUpdateAvailable,
+	isUpdateInstalling,
+	latestLauncherRelease,
+} from '@/helpers/lumina/update'
 import { get, set } from '@/helpers/settings.ts'
-import { isUpdateInstalling, isUpdateAvailable } from '@/helpers/lumina/update'
 import { injectAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
 import { useTheming } from '@/store/state'
 
@@ -126,6 +130,11 @@ const osPlatform = getOsPlatform()
 const osVersion = getOsVersion()
 const settings = ref(await get())
 
+// Prefer the latest GitHub release tag (fetched at startup by the updater) so
+// the footer always reflects the newest published build; fall back to the
+// local build version if the remote isn't available yet (e.g. offline).
+const displayedVersion = computed(() => latestLauncherRelease.value?.tag_name ?? version)
+
 watch(
 	settings,
 	async () => {
@@ -195,7 +204,7 @@ const messages = defineMessages({
 						<LuminaLauncherLogo class="w-6 h-6" />
 					</button>
 					<div class="max-w-[200px]">
-						<p class="m-0">Lumina Launcher {{ version }}</p>
+						<p class="m-0">Lumina Launcher {{ displayedVersion }}</p>
 						<p class="m-0">
 							<span v-if="osPlatform === 'macos'">macOS</span>
 							<span v-else class="capitalize">{{ osPlatform }}</span>
@@ -204,18 +213,18 @@ const messages = defineMessages({
 					</div>
 					<div
 						v-if="isUpdateAvailable"
-						class="w-8 h-8 cursor-pointer hover:brightness-75 neon-icon pulse shrink-0"
+						class="w-8 h-8 shrink-0 cursor-pointer text-brand settings-update-pulse"
 					>
 						<template v-if="isUpdateInstalling">
 							<SpinnerIcon
-								class="size-6 animate-spin"
 								v-tooltip.bottom="formatMessage(messages.updateInstalling)"
+								class="size-6 animate-spin"
 							/>
 						</template>
 						<template v-else>
 							<DownloadIcon
-								class="size-6"
 								v-tooltip.bottom="formatMessage(messages.viewUpdateInfo)"
+								class="size-6"
 								@click="showUpdateModal()"
 							/>
 						</template>
@@ -229,5 +238,19 @@ const messages = defineMessages({
 </template>
 
 <style lang="scss" scoped>
-@import '../../../../../../packages/assets/styles/lumina/neon-icon.scss';
+@media (prefers-reduced-motion: no-preference) {
+	.settings-update-pulse {
+		animation: settings-pulse-breathe 2.5s ease-in-out infinite;
+	}
+
+	@keyframes settings-pulse-breathe {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.55;
+		}
+	}
+}
 </style>

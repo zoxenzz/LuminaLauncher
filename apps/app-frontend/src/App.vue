@@ -1277,15 +1277,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 			</Admonition>
 			<RouterView v-slot="{ Component }">
 				<template v-if="Component">
-					<!-- While a card-expand is morphing, disable the page fade so the new
-					   page mounts instantly (see useCardExpandTransition for why).
-					   Keying the Suspense by route path is what keeps rapid navigation
-					   safe: with mode="out-in" an un-keyed child gets patched in place,
-					   and a second click mid-transition corrupts the enter/leave state
-					   (the new page is left invisible until the next navigation).
-					   A fresh key makes every navigation a distinct element, so the
-					   transition always runs to completion. -->
-					<Transition :css="!cardExpandActive" name="page" mode="out-in">
+					<Transition :css="!cardExpandActive" name="page">
 						<Suspense :key="route.path" @pending="onSuspensePending" @resolve="onSuspenseResolve">
 							<component :is="Component"></component>
 							<!-- Never leave the viewport empty while an async page loads:

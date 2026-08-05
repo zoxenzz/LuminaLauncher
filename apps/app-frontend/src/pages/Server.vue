@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import {
-	BadgeCheckIcon,
-	GlobeIcon,
-	NoSignalIcon,
-	SpinnerIcon,
-	UsersIcon,
-} from '@modrinth/assets'
+import { BadgeCheckIcon, GlobeIcon, NoSignalIcon, SpinnerIcon, UsersIcon } from '@modrinth/assets'
 import {
 	Avatar,
 	ButtonStyled,
@@ -15,9 +9,10 @@ import {
 	useVIntl,
 } from '@modrinth/ui'
 import { openUrl } from '@tauri-apps/plugin-opener'
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
+import { registerDestinationElement } from '@/composables/useCardExpandTransition'
 import { PARTNERED_SERVERS, type PartneredServer } from '@/helpers/partnered-servers'
 import { withTimeout } from '@/helpers/utils'
 import { refreshServerData, type ServerData } from '@/helpers/worlds'
@@ -97,6 +92,17 @@ const refreshing = computed(() => serverData.value.refreshing && !serverData.val
 const bannerImageStyle = computed(() =>
 	partner.value ? { backgroundImage: `url(${partner.value.bannerUrl})` } : undefined,
 )
+
+const heroElement = ref<HTMLElement | null>(null)
+
+// Shared-element target for the card-expand transition: when this page is
+// reached from a partnered-server card, the hero morphs in from the card's
+// banner instead of fading.
+onMounted(() => {
+	if (partner.value) {
+		registerDestinationElement(partner.value.id, heroElement.value)
+	}
+})
 </script>
 
 <template>
@@ -104,6 +110,7 @@ const bannerImageStyle = computed(() =>
 		<div class="relative h-60 rounded-2xl overflow-hidden flex items-center justify-center">
 			<div
 				v-if="bannerImageStyle"
+				ref="heroElement"
 				class="absolute inset-0 bg-cover bg-center"
 				:style="bannerImageStyle"
 			/>

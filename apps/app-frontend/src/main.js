@@ -1,3 +1,5 @@
+import './dev-mock-tauri.js'
+
 import 'floating-vue/dist/style.css'
 import 'overlayscrollbars/overlayscrollbars.css'
 

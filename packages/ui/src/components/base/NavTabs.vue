@@ -2,8 +2,8 @@
 	<nav
 		v-if="filteredLinks.length > 1"
 		ref="scrollContainer"
-		class="relative flex w-fit overflow-x-auto rounded-full bg-bg-raised p-1 text-sm font-bold"
-		:class="{ 'drop-shadow-xl border border-solid border-surface-4': mode === 'navigation' }"
+		class="relative flex w-fit overflow-x-auto rounded-full border border-solid border-[color:var(--color-brand-highlight)]/35 bg-bg-raised/80 p-1 text-sm font-bold shadow-[0_8px_24px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-xl"
+		:class="{ 'border-[color:var(--color-brand)]/45': mode === 'navigation' }"
 	>
 		<template v-if="mode === 'navigation'">
 			<RouterLink
@@ -45,11 +45,8 @@
 		<!-- Animated slider background -->
 		<div
 			v-if="sliderReady && currentActiveIndex !== -1"
-			class="pointer-events-none absolute h-[calc(100%-0.5rem)] overflow-hidden rounded-full p-1"
-			:class="[
-				subpageSelected ? 'bg-button-bg' : 'bg-button-bgSelected',
-				{ 'navtabs-transition': transitionsEnabled },
-			]"
+			class="pointer-events-none absolute overflow-hidden rounded-full border border-[color:var(--color-brand-highlight)]/70 bg-[color:var(--color-brand-highlight)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_18px_rgba(0,0,0,0.16)] backdrop-blur-sm"
+			:class="[{ 'navtabs-transition': transitionsEnabled }]"
 			:style="sliderStyle"
 			aria-hidden="true"
 		/>

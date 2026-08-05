@@ -11,10 +11,11 @@ import {
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { useRouter } from 'vue-router'
 
+import { beginCardExpand } from '@/composables/useCardExpandTransition'
 import type { PartneredServer } from '@/helpers/partnered-servers'
 import type { ServerStatus } from '@/helpers/worlds'
 
-defineProps<{
+const props = defineProps<{
 	partner: PartneredServer
 	serverStatus?: ServerStatus
 	refreshing: boolean
@@ -23,6 +24,15 @@ defineProps<{
 const router = useRouter()
 const { formatMessage } = useVIntl()
 const formatNumber = useFormatNumber()
+
+function openServerDetail(event: MouseEvent) {
+	const banner = (event.currentTarget as HTMLElement).querySelector<HTMLElement>(
+		'.partnered-card-banner',
+	)
+	beginCardExpand(props.partner.id, banner, () => {
+		router.push(`/server/${props.partner.id}`)
+	})
+}
 
 const messages = defineMessages({
 	partnered: {
@@ -53,13 +63,13 @@ const messages = defineMessages({
 		class="group relative flex flex-col rounded-xl bg-bg-raised card-shadow overflow-clip cursor-pointer hover:brightness-90 transition-all"
 		role="button"
 		:aria-label="`${partner.name} - ${formatMessage(messages.viewInfo)}`"
-		@click="router.push(`/server/${partner.id}`)"
+		@click="openServerDetail"
 	>
 		<div class="relative w-full aspect-[2/1] overflow-hidden">
 			<img
 				:src="partner.bannerUrl"
 				alt=""
-				class="absolute inset-0 h-full w-full object-cover"
+				class="partnered-card-banner absolute inset-0 h-full w-full object-cover"
 			/>
 			<div class="absolute inset-0 bg-gradient-to-b from-black/40 to-transparent" />
 			<TagItem

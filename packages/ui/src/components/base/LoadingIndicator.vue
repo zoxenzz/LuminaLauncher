@@ -1,113 +1,90 @@
 <template>
-	<div class="w-full flex items-center justify-center flex-col gap-2">
-		<div class="title">Loading</div>
-		<div class="placeholder"></div>
-		<div class="placeholder"></div>
-		<div class="placeholder"></div>
+	<div class="loading-indicator-shell" role="status" aria-live="polite">
+		<div class="loading-indicator-card">
+			<div class="loading-indicator-spinner" aria-hidden="true" />
+			<div class="loading-indicator-label">
+				Loading<span class="loading-indicator-dots" aria-hidden="true"></span>
+			</div>
+		</div>
 	</div>
 </template>
 
 <script setup></script>
 <style scoped>
-.title {
-	position: absolute;
-	z-index: 1;
-	font-weight: bold;
-	color: var(--color-contrast);
+.loading-indicator-shell {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	padding: 2rem 1rem;
+}
 
-	&::after {
-		content: '';
-		animation: dots 2s infinite;
-	}
+.loading-indicator-card {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.85rem;
+	padding: 0.85rem 1rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 22%, transparent);
+	/* Solid, not frosted: no translucent/backdrop-blurred surface, so the
+	   loading state never reads as a full-screen glass overlay and the page
+	   behind it stays fully visible. */
+	background: linear-gradient(135deg, var(--color-raised-bg) 0%, var(--color-bg) 100%);
+	box-shadow:
+		0 14px 32px rgba(0, 0, 0, 0.25),
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 10%, transparent),
+		0 0 0 1px color-mix(in srgb, var(--color-brand) 8%, transparent);
+}
+
+.loading-indicator-spinner {
+	display: inline-block;
+	width: 1.1rem;
+	height: 1.1rem;
+	border-radius: 999px;
+	border: 2px solid color-mix(in srgb, var(--color-brand) 24%, transparent);
+	border-top-color: var(--color-brand);
+	border-right-color: color-mix(in srgb, var(--color-brand) 72%, transparent);
+	animation: spin 0.85s linear infinite;
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-brand) 8%, transparent);
+	flex-shrink: 0;
+}
+
+.loading-indicator-label {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--color-contrast);
+	letter-spacing: 0.02em;
+}
+
+.loading-indicator-dots::after {
+	content: '';
+	animation: dots 1.2s steps(4, end) infinite;
 }
 
 @keyframes dots {
-	25% {
+	0% {
 		content: '';
 	}
-	50% {
+	25% {
 		content: '.';
 	}
-	75% {
+	50% {
 		content: '..';
 	}
-	0%,
+	75% {
+		content: '...';
+	}
 	100% {
 		content: '...';
 	}
 }
 
-.placeholder {
-	border-radius: var(--radius-lg);
-	width: 100%;
-	height: 4rem;
-	opacity: 0.25;
-	position: relative;
-	overflow: hidden;
-	background-color: var(--color-raised-bg);
-	animation: pop 4s ease-in-out infinite;
-	border: 1px solid transparent;
-
-	&::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		background-image: linear-gradient(
-			-45deg,
-			transparent 30%,
-			rgba(196, 217, 237, 0.075) 50%,
-			transparent 70%
-		);
-		animation: shimmer 4s ease-in-out infinite;
-	}
-
-	&:nth-child(2)::before {
-		animation-delay: 0s;
-	}
-
-	&:nth-child(3)::before {
-		animation-delay: 0.3s;
-	}
-
-	&:nth-child(4)::before {
-		animation-delay: 0.6s;
-	}
-
-	&:nth-child(2) {
-		animation-delay: 0s;
-	}
-
-	&:nth-child(3) {
-		animation-delay: 0.3s;
-	}
-
-	&:nth-child(4) {
-		animation-delay: 0.6s;
-	}
-}
-
-@keyframes pop {
+@keyframes spin {
 	from {
-		opacity: 0.25;
-		border-color: transparent;
-	}
-	50% {
-		opacity: 0.5;
-		border-color: var(--color-button-bg);
+		transform: rotate(0deg);
 	}
 	to {
-		opacity: 0.25;
-		border-color: transparent;
-	}
-}
-
-@keyframes shimmer {
-	from {
-		transform: translateX(-80%);
-	}
-	50%,
-	to {
-		transform: translateX(80%);
+		transform: rotate(360deg);
 	}
 }
 </style>

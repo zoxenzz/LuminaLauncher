@@ -1,5 +1,5 @@
 <template>
-	<div v-if="data">
+	<div>
 		<Teleport to="#sidebar-teleport-target">
 			<ProjectSidebarCompatibility
 				v-if="!isServerProject"

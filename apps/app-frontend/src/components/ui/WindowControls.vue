@@ -15,13 +15,7 @@
 				<MaximizeIcon v-else />
 			</button>
 		</ButtonStyled>
-		<ButtonStyled
-			type="transparent"
-			color="red"
-			color-fill="none"
-			hover-color-fill="background"
-			circular
-		>
+		<ButtonStyled type="transparent" circular>
 			<button class="relative expanded-button close-button" @click="handleClose">
 				<XIcon />
 			</button>
@@ -81,6 +75,15 @@ const handleClose = async () => {
 }
 </script>
 <style scoped>
+.expanded-button {
+	color: var(--color-text-default);
+	border: 1px solid transparent;
+	transition:
+		color 150ms ease,
+		background 150ms ease,
+		border-color 150ms ease;
+}
+
 .expanded-button::before {
 	inset: -9px -6px;
 	content: '';
@@ -89,5 +92,23 @@ const handleClose = async () => {
 
 .expanded-button.close-button::before {
 	inset: -9px -9px -9px -6px;
+}
+
+.expanded-button:hover {
+	color: var(--color-brand);
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--color-brand) 16%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-brand) 22%, transparent);
+}
+
+/* Close keeps the gold accent treatment for consistency, with red reserved
+	 as a subtle icon-level danger cue — never a full-color takeover. */
+.expanded-button.close-button:hover {
+	background: color-mix(in srgb, rgba(255, 86, 86, 0.14) 60%, transparent);
+	border-color: color-mix(in srgb, #ffb4ab 28%, transparent);
+
+	svg {
+		color: #ffb4ab;
+	}
 }
 </style>

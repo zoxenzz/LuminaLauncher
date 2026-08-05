@@ -49,8 +49,16 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div v-for="instance in recentInstances" :key="instance.id" v-tooltip.right="instance.name">
-		<NavButton :to="`/instance/${encodeURIComponent(instance.path)}`" class="relative">
+	<div v-for="instance in recentInstances" :key="instance.id" v-tooltip.top="instance.name">
+		<NavButton
+			:to="`/instance/${encodeURIComponent(instance.path)}`"
+			:is-subpage="
+				(r) =>
+					r.path === `/instance/${encodeURIComponent(instance.path)}` ||
+					r.path.startsWith(`/instance/${encodeURIComponent(instance.path)}/`)
+			"
+			class="relative"
+		>
 			<Avatar
 				:src="instance.icon_path ? convertFileSrc(instance.icon_path) : null"
 				size="28px"
@@ -65,10 +73,7 @@ onUnmounted(() => {
 			</div>
 		</NavButton>
 	</div>
-	<div
-		v-if="instances && recentInstances.length > 0"
-		class="h-px w-6 mx-auto my-2 bg-divider"
-	></div>
+	<div v-if="recentInstances.length > 0" class="h-px w-6 mx-auto my-2 bg-divider"></div>
 </template>
 
 <style scoped lang="scss"></style>

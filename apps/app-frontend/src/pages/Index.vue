@@ -92,8 +92,12 @@ async function refreshFeaturedProjects() {
 	await Promise.all([fetchFeaturedModpacks(), fetchFeaturedMods()])
 }
 
-await fetchInstances()
-await refreshFeaturedProjects()
+try {
+	await fetchInstances()
+	await refreshFeaturedProjects()
+} catch (err) {
+	console.warn('[Index] Error loading home page data:', err)
+}
 
 let unlistenProfile: (() => void) | undefined
 

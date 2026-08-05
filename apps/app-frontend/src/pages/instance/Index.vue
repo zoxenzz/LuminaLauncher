@@ -264,6 +264,9 @@
 			<template #filter_update><UpdatedIcon />Select Updatable</template>
 		</ContextMenu>
 	</div>
+	<div v-else class="flex items-center justify-center h-full text-color-text-default">
+		<p>Instance data couldn't be loaded.</p>
+	</div>
 </template>
 <script setup lang="ts">
 import type { Labrinth } from '@modrinth/api-client'
@@ -806,7 +809,7 @@ Button {
 		background: inherit;
 		transition: all ease-in-out 0.1s;
 		width: 100%;
-		color: var(--color-primary);
+		color: var(--color-text-default);
 		box-shadow: none;
 
 		&.router-link-exact-active {

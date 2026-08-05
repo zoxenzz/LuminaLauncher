@@ -24,7 +24,7 @@
 					role="dialog"
 					aria-modal="true"
 					:aria-labelledby="headerId"
-					class="modal-body flex flex-col bg-bg-raised rounded-2xl border border-solid border-surface-5"
+					class="modal-body flex flex-col overflow-hidden rounded-[1.625rem] border border-solid border-[color:var(--color-brand-highlight)]/70"
 					v-bind="$attrs"
 					@keydown="handleKeyDown"
 				>
@@ -131,6 +131,21 @@
 		</div>
 	</Teleport>
 </template>
+
+<style scoped>
+.modal-body {
+	background: rgba(14, 12, 10, 0.88);
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.08),
+		0 32px 64px rgba(0, 0, 0, 0.55);
+	backdrop-filter: blur(24px) saturate(175%);
+	-webkit-backdrop-filter: blur(24px) saturate(175%);
+}
+
+.modal-body :deep([data-modal-content]) {
+	background: transparent;
+}
+</style>
 
 <script setup lang="ts">
 import { XIcon } from '@modrinth/assets'
@@ -443,7 +458,7 @@ defineOptions({
 	&.shown {
 		visibility: visible;
 		transform: translate(0, 0);
-		transition: all 0.2s ease-out;
+		transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 
 		> .modal-body {
 			opacity: 1;
@@ -454,18 +469,17 @@ defineOptions({
 
 	> .modal-body {
 		position: fixed;
-		box-shadow: 4px 4px 26px 10px rgba(0, 0, 0, 0.08);
 		max-height: calc(100% - 2 * var(--gap-lg));
 		max-width: min(v-bind(resolvedMaxWidth), calc(100% - 2 * var(--gap-lg)));
 		overflow-y: hidden;
 		overflow-x: hidden;
 		width: v-bind(resolvedWidth);
 		pointer-events: auto;
-		scale: 0.97;
+		scale: 0.96;
 
 		visibility: hidden;
 		opacity: 0;
-		transition: all 0.2s ease-in-out;
+		transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 
 		@media (prefers-reduced-motion) {
 			transition: none !important;

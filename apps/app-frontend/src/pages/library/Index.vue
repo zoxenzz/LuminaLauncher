@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { PlusIcon } from '@modrinth/assets'
 import { ButtonStyled, injectNotificationManager, NavTabs } from '@modrinth/ui'
-import { inject, onUnmounted, ref, shallowRef } from 'vue'
+import { inject, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 
 import { NewInstanceImage } from '@/assets/icons'
 import { profile_listener } from '@/helpers/events.js'
 import { list } from '@/helpers/profile.js'
+import { withTimeout } from '@/helpers/utils'
 import { useBreadcrumbs } from '@/store/breadcrumbs.js'
 
 const { handleError } = injectNotificationManager()
@@ -16,7 +17,10 @@ const breadcrumbs = useBreadcrumbs()
 
 breadcrumbs.setRootContext({ name: 'Library', link: route.path })
 
-const instances = shallowRef(await list().catch(handleError))
+// Guard against a slow/hung profile backend: fall back to an empty list after
+// 5s so the page still renders (matching the Home page) instead of leaving the
+// Suspense loader spinning over a blank screen forever.
+const instances = shallowRef(await withTimeout(list(), 5000, []).catch(handleError))
 
 const offline = ref(!navigator.onLine)
 window.addEventListener('offline', () => {
@@ -26,11 +30,18 @@ window.addEventListener('online', () => {
 	offline.value = false
 })
 
-const unlistenProfile = await profile_listener(async () => {
-	instances.value = await list().catch(handleError)
+let unlistenProfile: (() => void) | undefined
+
+// Registered in onMounted (not awaited at the top level) so the page's Suspense
+// resolves as soon as the instance list returns.
+onMounted(async () => {
+	unlistenProfile = await profile_listener(async () => {
+		instances.value = await withTimeout(list(), 5000, []).catch(handleError)
+	})
 })
+
 onUnmounted(() => {
-	unlistenProfile()
+	unlistenProfile?.()
 })
 </script>
 

@@ -66,8 +66,35 @@ body {
 		var(--color-bg);
 }
 
+.v-popper__inner {
+	background: rgba(13, 12, 11, 0.72);
+	color: var(--color-contrast);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: var(--radius-lg);
+	box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+	backdrop-filter: blur(24px) saturate(175%);
+	-webkit-backdrop-filter: blur(24px) saturate(175%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+	.v-popper__inner {
+		background: rgba(16, 14, 12, 0.94);
+	}
+}
+
+.v-popper__arrow-outer,
+.v-popper__arrow-inner {
+	border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
 * {
 	box-sizing: border-box;
+}
+
+/* Consistent keyboard-focus indicator across the whole app, using the accent color */
+:where(button, a, [tabindex], summary, input, select, textarea):focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--color-brand) 75%, transparent);
+	outline-offset: 2px;
 }
 
 .card-divider {
@@ -112,8 +139,10 @@ a {
 	}
 
 	&.featured {
-		background-color: var(--color-brand-highlight);
-		color: var(--color-contrast);
+		background-color: var(--color-brand);
+		color: #0d0c0b;
+		font-weight: 600;
+		border: 1px solid rgba(255, 255, 255, 0.1);
 	}
 }
 
@@ -146,7 +175,8 @@ a {
 }
 
 .highlighted {
-	box-shadow: 0 0 1rem var(--color-brand) !important;
+	border: 1px solid rgba(223, 183, 67, 0.25) !important;
+	box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
 }
 
 .gecko {
@@ -216,9 +246,9 @@ textarea {
 
 	&:focus,
 	&:focus-visible {
-		box-shadow:
-			inset 0 0 0 transparent,
-			0 0 0 0.25rem var(--color-brand-shadow);
+		outline: 2px solid color-mix(in srgb, var(--color-brand) 65%, transparent);
+		outline-offset: 0;
+		box-shadow: var(--shadow-inset-sm);
 		color: var(--color-button-text-active);
 	}
 
