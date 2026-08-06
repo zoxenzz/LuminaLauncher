@@ -54,15 +54,25 @@ jobs:
             echo "on_tag=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: 🚀 Create release
+      # Idempotent release creation via the GitHub CLI (pre-installed and
+      # pre-authenticated on runners). Finds the release by tag if it already
+      # exists, otherwise creates it — so re-running a tag never explodes.
+      - name: 🚀 Create release (if not already present)
         id: create_release
         if: steps.is_tag.outputs.on_tag == 'true'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          generate_release_notes: true
-          draft: false
+        shell: bash
+        run: |
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq .id 2>/dev/null)
+          if [ -z "$RELEASE_ID" ]; then
+            RELEASE_ID=$(gh api --method POST "repos/${{ github.repository }}/releases" \
+              -f "tag_name=${{ github.ref_name }}" \
+              -f "name=${{ github.ref_name }}" \
+              -F generate_release_notes=true \
+              -F draft=false \
+              -F prerelease=false \
+              --jq .id)
+          fi
+          echo "id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
 
   build:
     name: ${{ matrix.label }}
