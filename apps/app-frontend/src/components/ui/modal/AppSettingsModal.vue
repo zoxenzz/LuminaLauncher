@@ -7,6 +7,8 @@ import {
 	LanguagesIcon,
 	LuminaLauncherLogo,
 	PaintbrushIcon,
+	RefreshCwIcon,
+	RotateClockwiseIcon,
 	SettingsIcon,
 	ShieldIcon,
 	SpinnerIcon,
@@ -118,9 +120,9 @@ function showUpdateModal() {
 	void launcherUpdateModal.value?.show()
 }
 
-defineExpose({ show, showUpdateModal })
-
-const { progress, version: downloadingVersion } = injectAppUpdateDownloadProgress()
+defineExpose({ show, showUpdateModal }) // Kept for its side effect: App.vue provides this so the modal can render;
+// the footer itself drives off the updater store's live progress.
+injectAppUpdateDownloadProgress()
 
 const version = await getVersion()
 const osPlatform = getOsPlatform()
@@ -152,7 +154,6 @@ function devModeCount() {
 		}
 	}
 }
-
 const messages = defineMessages({
 	downloading: {
 		id: 'app.settings.downloading',
@@ -162,10 +163,6 @@ const messages = defineMessages({
 		id: 'lumina.app.settings.update-installing',
 		defaultMessage: 'Installing update...',
 	},
-	viewUpdateInfo: {
-		id: 'lumina.app.settings.view-update-info',
-		defaultMessage: 'View update info',
-	},
 	checkForUpdates: {
 		id: 'lumina.app.settings.check-for-updates',
 		defaultMessage: 'Check for updates',
@@ -173,6 +170,14 @@ const messages = defineMessages({
 	checkingForUpdates: {
 		id: 'lumina.app.settings.checking-for-updates',
 		defaultMessage: 'Checking…',
+	},
+	updateAvailable: {
+		id: 'lumina.app.settings.update-available',
+		defaultMessage: 'Update available',
+	},
+	restartToApply: {
+		id: 'lumina.app.settings.restart-to-apply',
+		defaultMessage: 'Restart to apply',
 	},
 })
 </script>
@@ -185,72 +190,233 @@ const messages = defineMessages({
 			</span>
 		</template>
 		<template #footer>
-			<div class="mt-auto text-secondary text-sm">
-				<div class="mb-3">
-					<template v-if="progress > 0 && progress < 1">
-						<p class="m-0 mb-2">
-							{{ formatMessage(messages.downloading, { version: downloadingVersion }) }}
-						</p>
-						<ProgressBar :progress="progress" />
-					</template>
+			<div class="settings-footer">
+				<div v-if="updater.phase === 'downloading'" class="settings-footer-progress">
+					<p class="settings-footer-downloading m-0 mb-2">
+						{{ formatMessage(messages.downloading, { version: updater.version }) }}
+					</p>
+					<ProgressBar :progress="updater.progress" />
 				</div>
-				<p v-if="themeStore.devMode" class="text-brand font-semibold m-0 mb-2">
+
+				<p v-if="themeStore.devMode" class="text-brand font-semibold m-0">
 					{{ formatMessage(developerModeEnabled) }}
 				</p>
-				<div class="flex items-center gap-3">
+
+				<div class="settings-footer-brand">
 					<button
-						class="p-0 m-0 bg-transparent border-none cursor-pointer button-animation"
-						:class="{
-							'text-brand': themeStore.devMode,
-							'text-secondary': !themeStore.devMode,
-						}"
+						type="button"
+						class="settings-footer-logo"
+						:aria-label="`Lumina Launcher v${displayedVersion}`"
 						@click="devModeCount"
 					>
-						<LuminaLauncherLogo class="w-6 h-6" />
+						<LuminaLauncherLogo class="size-5" />
 					</button>
-					<div class="max-w-[200px]">
-						<p class="m-0">Lumina Launcher {{ displayedVersion }}</p>
-						<p class="m-0">
-							<span v-if="osPlatform === 'macos'">macOS</span>
-							<span v-else class="capitalize">{{ osPlatform }}</span>
-							{{ osVersion }}
+					<div class="min-w-0">
+						<p class="settings-footer-name m-0">Lumina Launcher</p>
+						<p class="m-0 text-xs">
+							<span class="settings-footer-version">v{{ displayedVersion }}</span>
+							<span class="text-secondary">
+								· <span v-if="osPlatform === 'macos'">macOS</span>
+								<span v-else class="capitalize">{{ osPlatform }}</span>
+								{{ osVersion }}
+							</span>
 						</p>
 					</div>
-					<button
-						v-if="!updater.isUpdateAvailable"
-						class="p-0 m-0 bg-transparent border-none cursor-pointer text-secondary text-sm transition-colors hover:text-brand disabled:cursor-default disabled:opacity-60"
-						:disabled="updater.isChecking"
-						@click="updater.checkForUpdates()"
-					>
-						{{ formatMessage(updater.isChecking ? messages.checkingForUpdates : messages.checkForUpdates) }}
-					</button>
-					<div
-						v-if="updater.isUpdateAvailable"
-						class="w-8 h-8 shrink-0 cursor-pointer text-brand settings-update-pulse"
-					>
-						<template v-if="updater.isUpdateInstalling">
-							<SpinnerIcon
-								v-tooltip.bottom="formatMessage(messages.updateInstalling)"
-								class="size-6 animate-spin"
-							/>
-						</template>
-						<template v-else>
-							<DownloadIcon
-								v-tooltip.bottom="formatMessage(messages.viewUpdateInfo)"
-								class="size-6"
-								@click="showUpdateModal()"
-							/>
-						</template>
-					</div>
 				</div>
+
+				<button
+					v-if="!updater.isUpdateAvailable"
+					type="button"
+					class="settings-footer-action"
+					:disabled="updater.isChecking"
+					@click="updater.checkForUpdates()"
+				>
+					<SpinnerIcon v-if="updater.isChecking" class="size-4 animate-spin" />
+					<RefreshCwIcon v-else class="size-4" />
+					{{
+						formatMessage(
+							updater.isChecking ? messages.checkingForUpdates : messages.checkForUpdates,
+						)
+					}}
+				</button>
+
+				<button
+					v-else-if="updater.isReadyToRestart"
+					type="button"
+					class="settings-footer-action settings-footer-action-update settings-update-pulse"
+					@click="updater.restartToApply()"
+				>
+					<RotateClockwiseIcon class="size-4" />
+					{{ formatMessage(messages.restartToApply) }}
+				</button>
+
+				<button
+					v-else-if="updater.isUpdateInstalling"
+					type="button"
+					class="settings-footer-action settings-footer-action-update"
+					disabled
+				>
+					<SpinnerIcon class="size-4 animate-spin" />
+					{{ formatMessage(messages.updateInstalling) }}
+				</button>
+
+				<button
+					v-else-if="updater.phase === 'available'"
+					type="button"
+					class="settings-footer-action settings-footer-action-update settings-update-pulse"
+					@click="showUpdateModal()"
+				>
+					<DownloadIcon class="size-4" />
+					{{ formatMessage(messages.updateAvailable) }}
+				</button>
+				<!-- phase === 'downloading' renders no action button; the progress
+				     card above already communicates that state -->
 			</div>
 		</template>
 	</TabbedModal>
 
 	<LauncherUpdateModal ref="launcherUpdateModal" :version="version" />
 </template>
-
 <style lang="scss" scoped>
+.settings-footer {
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	margin-top: auto;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--brand-gradient-border);
+}
+
+.settings-footer-progress {
+	padding: 0.625rem;
+	border-radius: 0.875rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+	background: color-mix(in srgb, var(--color-brand) 4%, transparent);
+}
+
+.settings-footer-downloading {
+	color: var(--color-brand);
+	font-size: 0.8rem;
+	font-weight: 600;
+}
+
+.settings-footer-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	padding: 0.625rem;
+	border-radius: 0.875rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 20%, transparent);
+	background:
+		linear-gradient(180deg, color-mix(in srgb, var(--color-brand) 9%, transparent), transparent),
+		rgba(255, 255, 255, 0.02);
+}
+
+.settings-footer-logo {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	flex-shrink: 0;
+	padding: 0;
+	border-radius: 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 28%, transparent);
+	background: color-mix(in srgb, var(--color-brand) 12%, transparent);
+	color: var(--color-brand);
+	cursor: pointer;
+	transition:
+		transform 0.15s ease,
+		filter 0.15s ease,
+		border-color 0.15s ease;
+
+	&:hover {
+		transform: scale(1.06);
+		filter: brightness(1.2);
+		border-color: color-mix(in srgb, var(--color-brand) 50%, transparent);
+	}
+
+	&:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--color-brand) 75%, transparent);
+		outline-offset: 2px;
+	}
+}
+
+.settings-footer-name {
+	color: var(--color-contrast);
+	font-size: 0.875rem;
+	font-weight: 700;
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.settings-footer-version {
+	color: var(--color-brand);
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+}
+.settings-footer-action {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	width: 100%;
+	padding: 0.5rem 0.75rem;
+	border-radius: 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--color-brand) 40%, transparent);
+	background: color-mix(in srgb, var(--color-brand) 6%, transparent);
+	color: var(--color-brand);
+	font: inherit;
+	font-size: 0.85rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		transform 0.15s ease,
+		box-shadow 0.2s ease;
+
+	&:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--color-brand) 75%, transparent);
+		outline-offset: 2px;
+	}
+
+	&:hover:not([disabled]) {
+		background: color-mix(in srgb, var(--color-brand) 13%, transparent);
+		border-color: color-mix(in srgb, var(--color-brand) 70%, transparent);
+		transform: translateY(-1px);
+		box-shadow:
+			0 6px 18px rgba(0, 0, 0, 0.3),
+			0 0 14px color-mix(in srgb, var(--color-brand) 14%, transparent);
+	}
+
+	&:active:not([disabled]) {
+		transform: translateY(0);
+	}
+
+	&[disabled] {
+		opacity: 0.65;
+		cursor: default;
+	}
+}
+
+.settings-footer-action-update {
+	border-color: color-mix(in srgb, var(--color-brand) 55%, transparent);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-brand) 20%, transparent),
+		color-mix(in srgb, var(--color-brand) 7%, transparent)
+	);
+	font-weight: 700;
+
+	&:hover:not([disabled]) {
+		filter: brightness(1.1);
+		box-shadow: 0 0 16px color-mix(in srgb, var(--color-brand) 22%, transparent);
+	}
+}
+
 @media (prefers-reduced-motion: no-preference) {
 	.settings-update-pulse {
 		animation: settings-pulse-breathe 2.5s ease-in-out infinite;

@@ -92,7 +92,9 @@ function matchesArch(name: string, wantArm: boolean): boolean {
  * Chooses the installer matching the current OS and CPU architecture,
  * preferring arch-specific builds over generic ones.
  */
-async function selectInstaller(builds: LauncherReleaseAsset[]): Promise<LauncherReleaseAsset | null> {
+async function selectInstaller(
+	builds: LauncherReleaseAsset[],
+): Promise<LauncherReleaseAsset | null> {
 	const currentOS = (await getOS()).toLowerCase()
 	const extensions = OS_EXTENSIONS[currentOS] ?? []
 	const wantArm = (await arch()).includes('arm')
@@ -262,7 +264,7 @@ export const useUpdater = defineStore('updater', () => {
 	}
 
 	/**
-	 * Auto-downloads the newest release when the user enabled
+	 * Auto-downloads and installs the newest release when the user enabled
 	 * `auto_download_updates` in settings. No-op otherwise.
 	 */
 	async function maybeAutoDownload() {
@@ -270,7 +272,8 @@ export const useUpdater = defineStore('updater', () => {
 		try {
 			const settings = await getSettings()
 			if (settings.auto_download_updates) {
-				await downloadUpdate()
+				const downloaded = await downloadUpdate()
+				if (downloaded) await installUpdate()
 			}
 		} catch (error) {
 			console.warn('[updater] Failed to read settings for auto-download:', error)

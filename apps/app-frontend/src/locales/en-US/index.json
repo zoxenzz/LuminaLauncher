@@ -1103,8 +1103,11 @@
 	"lumina.app.settings.update-installing": {
 		"message": "Installing update..."
 	},
-	"lumina.app.settings.view-update-info": {
-		"message": "View update info"
+	"lumina.app.settings.update-available": {
+		"message": "Update available"
+	},
+	"lumina.app.settings.restart-to-apply": {
+		"message": "Restart to apply"
 	},
 	"lumina.app.updater.toast.available": {
 		"message": "New version available (v{version})"

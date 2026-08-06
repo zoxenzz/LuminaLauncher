@@ -64,14 +64,21 @@ const WINDOWS_EXIT_GRACE: Duration = Duration::from_millis(1500);
 /// downloads always go through the API `url` with an
 /// `Accept: application/octet-stream` header (which GitHub redirects to a
 /// signed file URL).
+///
+/// Serializes as camelCase (matching the frontend `LauncherReleaseAsset`
+/// interface) but accepts **both** camelCase and GitHub's snake_case on
+/// deserialize — the GitHub API sends `browser_download_url`/
+/// `content_type`, so a bare `#[serde(rename_all = "camelCase")]` would
+/// fail to decode releases.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct Asset {
     pub id: u64,
     pub name: String,
     /// API asset URL (`.../releases/assets/{id}`) — must be used for downloads.
     pub url: String,
+    #[serde(rename = "browserDownloadUrl", alias = "browser_download_url")]
     pub browser_download_url: String,
+    #[serde(rename = "contentType", alias = "content_type")]
     pub content_type: Option<String>,
     pub size: Option<u64>,
 }
@@ -786,6 +793,49 @@ mod tests {
         assert_eq!(count("windows"), 4);
         assert_eq!(count("macos"), 2);
         assert_eq!(count("linux"), 2);
+    }
+
+    /// The GitHub API sends snake_case asset fields; the frontend sends
+    /// camelCase. Both must decode into the same struct (regression: a bare
+    /// `#[serde(rename_all = "camelCase")]` broke decoding of GitHub JSON).
+    #[test]
+    fn asset_decodes_from_github_snake_case() {
+        let json = r#"{
+            "id": 503771831,
+            "name": "Lumina.Launcher_1.2.2_x64-setup.exe",
+            "url": "https://api.github.com/repos/zoxenzz/LuminaLauncher/releases/assets/503771831",
+            "browser_download_url": "https://github.com/zoxenzz/LuminaLauncher/releases/download/release-1.2.2/Lumina.Launcher_1.2.2_x64-setup.exe",
+            "content_type": "application/x-msdownload",
+            "size": 14765964
+        }"#;
+        let asset: Asset = serde_json::from_str(json).expect("snake_case should decode");
+        assert_eq!(asset.name, "Lumina.Launcher_1.2.2_x64-setup.exe");
+        assert_eq!(asset.size, Some(14765964));
+        assert_eq!(asset.content_type.as_deref(), Some("application/x-msdownload"));
+    }
+
+    #[test]
+    fn asset_decodes_from_frontend_camel_case() {
+        let json = r#"{
+            "id": 1,
+            "name": "Lumina.Launcher_1.2.2_x64-setup.exe",
+            "url": "https://api.github.com/repos/zoxenzz/LuminaLauncher/releases/assets/1",
+            "browserDownloadUrl": "https://github.com/example/download.exe",
+            "contentType": "application/x-msdownload",
+            "size": 12345
+        }"#;
+        let asset: Asset = serde_json::from_str(json).expect("camelCase should decode");
+        assert_eq!(asset.name, "Lumina.Launcher_1.2.2_x64-setup.exe");
+        assert_eq!(asset.browser_download_url, "https://github.com/example/download.exe");
+    }
+
+    #[test]
+    fn asset_serializes_to_camel_case_for_frontend() {
+        let asset = asset("Lumina.Launcher_1.2.2_x64-setup.exe");
+        let json = serde_json::to_value(asset).unwrap();
+        assert!(json.get("browserDownloadUrl").is_some());
+        assert!(json.get("browser_download_url").is_none());
+        assert!(json.get("id").is_some());
     }
 
     #[test]
