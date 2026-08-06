@@ -10,13 +10,11 @@ use crate::api::{Result, TheseusSerializableError};
 use dashmap::DashMap;
 use std::path::{Path, PathBuf};
 use theseus::prelude::canonicalize;
-use theseus::util::lumina::utils;
 use url::Url;
 
 pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
     tauri::plugin::Builder::new("utils")
         .invoke_handler(tauri::generate_handler![
-            init_update_launcher,
             get_os,
             is_network_metered,
             should_disable_mouseover,
@@ -27,26 +25,6 @@ pub fn init<R: Runtime>() -> tauri::plugin::TauriPlugin<R> {
             get_opening_command
         ])
         .build()
-}
-
-// This code function is modified by Lumina Launcher
-#[tauri::command]
-pub async fn init_update_launcher(
-    download_url: &str,
-    filename: &str,
-    os_type: &str,
-    auto_update_supported: bool,
-    token: Option<String>,
-) -> Result<()> {
-    let _ = utils::init_update_launcher(
-        download_url,
-        filename,
-        os_type,
-        auto_update_supported,
-        token,
-    )
-    .await;
-    Ok(())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

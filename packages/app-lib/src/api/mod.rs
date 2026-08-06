@@ -15,7 +15,6 @@ pub mod server_address;
 pub mod settings;
 pub mod tags;
 pub mod worlds;
-pub mod lumina;
 
 pub mod data {
     pub use crate::state::{

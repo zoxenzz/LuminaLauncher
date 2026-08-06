@@ -13,6 +13,7 @@ use theseus::prelude::*;
 
 mod api;
 mod error;
+mod updater;
 
 #[cfg(target_os = "macos")]
 mod macos;
@@ -259,6 +260,9 @@ fn main() {
             toggle_decorations,
             show_window,
             restart_app,
+            updater::updater_check,
+            updater::updater_download,
+            updater::updater_install,
         ]);
 
     tracing::info!("Initializing app...");

@@ -33,16 +33,13 @@ import JavaSettings from '@/components/ui/settings/JavaSettings.vue'
 import LanguageSettings from '@/components/ui/settings/LanguageSettings.vue'
 import PrivacySettings from '@/components/ui/settings/PrivacySettings.vue'
 import ResourceManagementSettings from '@/components/ui/settings/ResourceManagementSettings.vue'
-import {
-	isUpdateAvailable,
-	isUpdateInstalling,
-	latestLauncherRelease,
-} from '@/helpers/lumina/update'
 import { get, set } from '@/helpers/settings.ts'
 import { injectAppUpdateDownloadProgress } from '@/providers/download-progress.ts'
 import { useTheming } from '@/store/state'
+import { useUpdater } from '@/store/updater'
 
 const themeStore = useTheming()
+const updater = useUpdater()
 const { formatMessage } = useVIntl()
 
 const devModeCounter = ref(0)
@@ -133,7 +130,7 @@ const settings = ref(await get())
 // Prefer the latest GitHub release tag (fetched at startup by the updater) so
 // the footer always reflects the newest published build; fall back to the
 // local build version if the remote isn't available yet (e.g. offline).
-const displayedVersion = computed(() => latestLauncherRelease.value?.tag_name ?? version)
+const displayedVersion = computed(() => updater.latestLauncherRelease.value?.tag_name ?? version)
 
 watch(
 	settings,
@@ -168,6 +165,14 @@ const messages = defineMessages({
 	viewUpdateInfo: {
 		id: 'lumina.app.settings.view-update-info',
 		defaultMessage: 'View update info',
+	},
+	checkForUpdates: {
+		id: 'lumina.app.settings.check-for-updates',
+		defaultMessage: 'Check for updates',
+	},
+	checkingForUpdates: {
+		id: 'lumina.app.settings.checking-for-updates',
+		defaultMessage: 'Checking…',
 	},
 })
 </script>
@@ -211,11 +216,19 @@ const messages = defineMessages({
 							{{ osVersion }}
 						</p>
 					</div>
+					<button
+						v-if="!updater.isUpdateAvailable"
+						class="p-0 m-0 bg-transparent border-none cursor-pointer text-secondary text-sm transition-colors hover:text-brand disabled:cursor-default disabled:opacity-60"
+						:disabled="updater.isChecking"
+						@click="updater.checkForUpdates()"
+					>
+						{{ formatMessage(updater.isChecking ? messages.checkingForUpdates : messages.checkForUpdates) }}
+					</button>
 					<div
-						v-if="isUpdateAvailable"
+						v-if="updater.isUpdateAvailable"
 						class="w-8 h-8 shrink-0 cursor-pointer text-brand settings-update-pulse"
 					>
-						<template v-if="isUpdateInstalling">
+						<template v-if="updater.isUpdateInstalling">
 							<SpinnerIcon
 								v-tooltip.bottom="formatMessage(messages.updateInstalling)"
 								class="size-6 animate-spin"

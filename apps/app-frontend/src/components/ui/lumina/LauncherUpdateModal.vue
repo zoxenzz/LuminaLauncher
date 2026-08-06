@@ -3,13 +3,7 @@ import { Button, defineMessages, useVIntl } from '@modrinth/ui'
 import { computed, ref } from 'vue'
 
 import ModalWrapper from '@/components/ui/modal/ModalWrapper.vue'
-import {
-	downloadLatestRelease,
-	isUpdateInstalling,
-	LAUNCHER_RELEASES_URL,
-	LAUNCHER_REPOSITORY_URL,
-	latestLauncherRelease,
-} from '@/helpers/lumina/update'
+import { LAUNCHER_RELEASES_URL, LAUNCHER_REPOSITORY_URL, useUpdater } from '@/store/updater'
 
 type ModalHandle = {
 	hide: () => void
@@ -20,13 +14,14 @@ const props = defineProps<{
 	version: string
 }>()
 
+const updater = useUpdater()
 const { formatMessage } = useVIntl()
 
 const updateModalView = ref<ModalHandle | null>(null)
 const updateRequestFailView = ref<ModalHandle | null>(null)
 
-const releaseTag = computed(() => latestLauncherRelease.value?.tag_name ?? '')
-const releaseTitle = computed(() => latestLauncherRelease.value?.name ?? '')
+const releaseTag = computed(() => updater.latestLauncherRelease.value?.tag_name ?? '')
+const releaseTitle = computed(() => updater.latestLauncherRelease.value?.name ?? '')
 
 const messages = defineMessages({
 	updateHeader: {
@@ -127,7 +122,7 @@ async function show() {
 
 async function initDownload() {
 	updateModalView.value?.hide()
-	const result = await downloadLatestRelease()
+	const result = await updater.updateNow()
 
 	if (!result) {
 		updateRequestFailView.value?.show()
@@ -201,7 +196,7 @@ defineExpose({
 				<Button class="bordered" @click="updateModalView?.hide()">
 					{{ formatMessage(messages.cancelAction) }}
 				</Button>
-				<Button class="bordered" :disabled="isUpdateInstalling" @click="initDownload()">
+				<Button class="bordered" :disabled="updater.isUpdateInstalling" @click="initDownload()">
 					{{ formatMessage(messages.downloadAction) }}
 				</Button>
 			</div>

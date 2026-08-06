@@ -241,7 +241,6 @@ fn main() {
                 "utils",
                 InlinedPlugin::new()
                     .commands(&[
-                        "init_update_launcher",
                         "get_os",
                         "is_network_metered",
                         "should_disable_mouseover",

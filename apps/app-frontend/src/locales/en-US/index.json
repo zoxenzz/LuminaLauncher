@@ -1094,11 +1094,56 @@
 	"lumina.app.minecraft-account.input.offline.name.placeholder": {
 		"message": "Your player name here..."
 	},
+	"lumina.app.settings.check-for-updates": {
+		"message": "Check for updates"
+	},
+	"lumina.app.settings.checking-for-updates": {
+		"message": "Checking…"
+	},
 	"lumina.app.settings.update-installing": {
 		"message": "Installing update..."
 	},
 	"lumina.app.settings.view-update-info": {
 		"message": "View update info"
+	},
+	"lumina.app.updater.toast.available": {
+		"message": "New version available (v{version})"
+	},
+	"lumina.app.updater.toast.available-text": {
+		"message": "A newer Lumina Launcher build is ready to install."
+	},
+	"lumina.app.updater.toast.checking": {
+		"message": "Checking for updates…"
+	},
+	"lumina.app.updater.toast.close": {
+		"message": "Dismiss"
+	},
+	"lumina.app.updater.toast.downloading": {
+		"message": "New update available (v{version}) — downloading…"
+	},
+	"lumina.app.updater.toast.error.title": {
+		"message": "Update check failed"
+	},
+	"lumina.app.updater.toast.installing": {
+		"message": "Installing update…"
+	},
+	"lumina.app.updater.toast.later": {
+		"message": "Later"
+	},
+	"lumina.app.updater.toast.ready.text": {
+		"message": "Restart Lumina Launcher to apply the update."
+	},
+	"lumina.app.updater.toast.ready.title": {
+		"message": "Update installed"
+	},
+	"lumina.app.updater.toast.restart-now": {
+		"message": "Restart now"
+	},
+	"lumina.app.updater.toast.restarting-soon": {
+		"message": "Restarting in {seconds}s…"
+	},
+	"lumina.app.updater.toast.update-now": {
+		"message": "Update now"
 	},
 	"minecraft-account.add-account": {
 		"message": "Add account"

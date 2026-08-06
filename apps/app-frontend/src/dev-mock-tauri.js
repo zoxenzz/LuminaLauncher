@@ -115,6 +115,34 @@ if (window.__TAURI_INTERNALS__) {
 				case 'plugin:window|minimize':
 				case 'plugin:window|toggle_maximize':
 					return null
+				case 'updater_check':
+					// ?mockUpdate=1 simulates a newer release so the toast's available
+					// state can be previewed in a plain browser.
+					if (new URLSearchParams(window.location.search).has('mockUpdate')) {
+						return {
+							status: { type: 'update_available', version: '1.2.2', notes: 'Mock release', size: 12345678 },
+							release: {
+								tag_name: 'release-1.2.2',
+								name: 'Mock 1.2.2',
+								body: 'Mock release notes',
+								assets: [
+									{
+										id: 1,
+										name: 'Lumina-Launcher-1.2.2-x64-setup.exe',
+										url: 'https://api.github.com/repos/zoxenzz/LuminaLauncher/releases/assets/1',
+										browserDownloadUrl: 'https://github.com/zoxenzz/LuminaLauncher/releases/download/release-1.2.2/Lumina-Launcher-1.2.2-x64-setup.exe',
+										contentType: 'application/x-msdownload',
+										size: 12345678,
+									},
+								],
+							},
+						}
+					}
+					return { status: { type: 'up_to_date' }, release: null }
+				case 'updater_download':
+					return '/mock/updates/mock-installer'
+				case 'updater_install':
+					return null
 				case 'plugin:event|listen':
 				case 'plugin:window|on_resized':
 				case 'plugin:window|on_moved':

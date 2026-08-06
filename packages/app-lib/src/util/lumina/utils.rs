@@ -1,13 +1,11 @@
 ///
 /// This file is modified by Lumina Launcher
 ///
-use crate::api::lumina::update;
 use crate::event::emit::emit_info;
 use crate::{Result, State};
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process;
 use std::time::SystemTime;
 use tokio::{fs, io};
 
@@ -211,39 +209,6 @@ const URL: &str = "https://api.github.com/repos/YOUR_GITHUB_USERNAME/ElyIntegrat
         .to_string();
 
     Ok((asset_name, download_url))
-}
-
-/// Initialize the update launcher.
-pub async fn init_update_launcher(
-    download_url: &str,
-    local_filename: &str,
-    os_type: &str,
-    auto_update_supported: bool,
-    token: Option<String>,
-) -> Result<()> {
-    tracing::info!("[Lumina] • Initialize downloading from • {:?}", download_url);
-    tracing::info!("[Lumina] • Save local file name • {:?}", local_filename);
-    tracing::info!("[Lumina] • OS type • {}", os_type);
-    tracing::info!("[Lumina] • Auto update supported • {}", auto_update_supported);
-
-    if let Err(e) = update::get_resource(
-        download_url,
-        local_filename,
-        os_type,
-        auto_update_supported,
-        token,
-    )
-    .await
-    {
-        eprintln!(
-            "[Lumina] • An error occurred! Failed to download the file: {}",
-            e
-        );
-    } else {
-        println!("[Lumina] • Code finishes without errors.");
-        process::exit(0)
-    }
-    Ok(())
 }
 
 /// Validating the `lumina/{target_directory}/` directory exists inside the libraries/lumina directory.

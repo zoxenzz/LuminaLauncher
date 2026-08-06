@@ -89,7 +89,7 @@ import {
 	warning_listener,
 } from '@/helpers/events.js'
 // This code line modified by Lumina Launcher
-import { fetchRemote, isAutoUpdating, isUpdateAvailable } from '@/helpers/lumina/update'
+import UpdateToast from '@/components/ui/lumina/UpdateToast.vue'
 import { create_profile_and_install_from_file } from '@/helpers/pack'
 import { list } from '@/helpers/profile.js'
 import { mergeUrlQuery, parseModrinthLink } from '@/helpers/project-links.ts'
@@ -104,6 +104,7 @@ import { setupProviders } from '@/providers/setup'
 import { setupAuthProvider } from '@/providers/setup/auth'
 import { setupLoadingStateProvider } from '@/providers/setup/loading-state'
 import { useDiscord } from '@/store/discord'
+import { useUpdater } from '@/store/updater'
 import { useError } from '@/store/error.js'
 import { useTheming } from '@/store/state'
 
@@ -119,6 +120,7 @@ const APP_SIDEBAR_WIDTH = 300
 const INTERCOM_BUBBLE_DEFAULT_PADDING = 20
 const credentials = ref()
 const discord = useDiscord()
+const updater = useUpdater()
 const sidebarToggled = ref(true)
 const unsubscribeSidebarToggle = themeStore.$subscribe(() => {
 	sidebarToggled.value = !themeStore.toggleSidebar
@@ -264,9 +266,9 @@ const authUnreachable = computed(() => {
 onMounted(async () => {
 	await useCheckDisableMouseover()
 	// This code line modified by Lumina Launcher
-	await fetchRemote()
-	if (isUpdateAvailable.value) {
-		if (isAutoUpdating.value) {
+	await updater.init()
+	if (updater.isUpdateAvailable.value) {
+		if (updater.isAutoUpdating.value) {
 			addPopupNotification({
 				title: formatMessage(messages.launcherAutoUpdatingTitle),
 				text: formatMessage(messages.launcherAutoUpdatingText),
@@ -1116,7 +1118,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 					<PlusIcon />
 				</NavButton>
 				<!-- This code line modified by Lumina Launcher -->
-				<template v-if="isUpdateAvailable">
+				<template v-if="updater.isUpdateAvailable">
 					<NavButton
 						v-tooltip.top="formatMessage(commonMessages.settingsLabel)"
 						class="dock-update-pulse"
@@ -1323,6 +1325,7 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	<I18nDebugPanel />
 	<NotificationPanel :has-sidebar="sidebarVisible" />
 	<PopupNotificationPanel :has-sidebar="sidebarVisible" />
+	<UpdateToast />
 	<ErrorModal ref="errorModal" />
 	<MinecraftAuthErrorModal ref="minecraftAuthErrorModal" />
 	<ContentInstallModal
