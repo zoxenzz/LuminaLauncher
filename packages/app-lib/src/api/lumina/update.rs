@@ -16,7 +16,11 @@ pub(crate) async fn get_resource(
     let full_path = download_dir.join(local_filename);
 
     // Private repos need an Authorization header on the release asset download.
-    let mut request = reqwest::Client::new().get(download_url);
+    // The API asset URL also requires `Accept: application/octet-stream` so
+    // GitHub redirects to the actual file instead of returning asset metadata.
+    let mut request = reqwest::Client::new()
+        .get(download_url)
+        .header(reqwest::header::ACCEPT, "application/octet-stream");
     if let Some(token) = token.as_deref().filter(|t| !t.is_empty()) {
         request = request.bearer_auth(token);
     }

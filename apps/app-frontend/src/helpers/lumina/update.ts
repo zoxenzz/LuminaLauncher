@@ -1,4 +1,5 @@
 import { getVersion } from '@tauri-apps/api/app'
+import { arch } from '@tauri-apps/plugin-os'
 import { ref } from 'vue'
 
 import { getOS, initUpdateLauncher, isDev } from '@/helpers/utils.js'
@@ -6,6 +7,11 @@ import { get } from '@/helpers/settings.ts'
 
 export type LauncherReleaseAsset = {
 	name: string
+	// API asset URL (api.github.com/.../releases/assets/{id}). The download
+	// MUST use this instead of browser_download_url: the latter returns 404 for
+	// private repos even with a valid token, while the API endpoint (with an
+	// `Accept: application/octet-stream` header) redirects to a signed URL.
+	url: string
 	browser_download_url: string
 }
 
@@ -135,7 +141,7 @@ export async function downloadLatestRelease(): Promise<boolean> {
 		currentOS.value = (await getOS()).toLowerCase()
 	}
 
-	const installer = getInstaller(resolveOperationalSystemExtension(), latestLauncherRelease.value.assets)
+	const installer = await getInstaller(resolveOperationalSystemExtension(), latestLauncherRelease.value.assets)
 	if (isDeveloper) {
 		console.debug(installer)
 	}
@@ -147,7 +153,7 @@ export async function downloadLatestRelease(): Promise<boolean> {
 	try {
 		isUpdateInstalling.value = true
 		return await initUpdateLauncher(
-			installer.browser_download_url,
+			installer.url,
 			installer.name,
 			currentOS.value,
 			true,
@@ -158,24 +164,28 @@ export async function downloadLatestRelease(): Promise<boolean> {
 	}
 }
 
-function getInstaller(
+async function getInstaller(
 	osExtensions: string[],
 	builds: LauncherReleaseAsset[],
-): LauncherReleaseAsset | null {
-	for (const build of builds) {
-		if (blacklistBeginPrefixes.some((prefix) => build.name.startsWith(prefix))) {
-			continue
-		}
+): Promise<LauncherReleaseAsset | null> {
+	// Prefer the installer matching this machine's CPU architecture
+	// (e.g. "x64" vs "arm64" installers), then fall back to any
+	// matching-OS installer.
+	const archToken = (await arch()).includes('arm') ? 'arm64' : 'x64'
 
-		if (osExtensions.some((extension) => build.name.endsWith(extension))) {
-			if (isDeveloper) {
-				console.debug(build.name, build.browser_download_url)
-			}
-			return build
+	const candidates = builds.filter(
+		(build) =>
+			!blacklistBeginPrefixes.some((prefix) => build.name.startsWith(prefix)) &&
+			osExtensions.some((extension) => build.name.endsWith(extension)),
+	)
+
+	if (isDeveloper) {
+		for (const build of candidates) {
+			console.debug(build.name, build.browser_download_url)
 		}
 	}
 
-	return null
+	return candidates.find((build) => build.name.includes(archToken)) ?? candidates[0] ?? null
 }
 
 function resolveOperationalSystemExtension(): string[] {
