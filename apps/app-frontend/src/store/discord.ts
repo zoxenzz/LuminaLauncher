@@ -24,15 +24,6 @@ export interface DiscordUser {
 	avatar?: string | null
 }
 
-export interface DiscordMember {
-	roles: string[]
-}
-
-export interface DiscordMemberRecord {
-	user: DiscordUser
-	roles: string[]
-}
-
 interface StoredSession {
 	token: DiscordTokenResponse
 	user: DiscordUser
@@ -52,7 +43,7 @@ function readStoredSession(): StoredSession | null {
 }
 
 export const useDiscord = defineStore('discord', () => {
-	const status = ref<'loading' | 'authorized' | 'denied' | 'unauthenticated'>('loading')
+	const status = ref<'loading' | 'authorized' | 'unauthenticated'>('loading')
 	const user = ref<DiscordUser | null>(null)
 	const members = ref<DiscordUser[]>([])
 	const errorMessage = ref('')
@@ -156,63 +147,12 @@ export const useDiscord = defineStore('discord', () => {
 		return (await response.json()) as DiscordUser
 	}
 
-	async function fetchMemberRoles(token: string): Promise<string[]> {
-		const response = await tauriFetch(
-			`https://discord.com/api/v10/users/@me/guilds/${config.discord.guildId}/member`,
-			{ method: 'GET', headers: { Authorization: `Bearer ${token}` } },
-		)
-		if (!response.ok) {
-			throw { status: response.status, message: 'Failed to fetch Discord membership' }
-		}
-		const member = (await response.json()) as DiscordMember
-		return member.roles
-	}
-
-	async function fetchMembersWithRole(token: string): Promise<DiscordUser[]> {
-		const membersWithRole: DiscordUser[] = []
-		let after = '0'
-		while (membersWithRole.length < 2000) {
-			const response = await tauriFetch(
-				`https://discord.com/api/v10/guilds/${config.discord.guildId}/members?limit=1000&after=${after}`,
-				{ method: 'GET', headers: { Authorization: `Bearer ${token}` } },
-			)
-			if (!response.ok) {
-				throw { status: response.status, message: 'Failed to fetch Discord members' }
-			}
-			const page = (await response.json()) as DiscordMemberRecord[]
-			if (page.length === 0) break
-			for (const record of page) {
-				if (record.roles.includes(config.discord.roleId)) {
-					membersWithRole.push(record.user)
-				}
-			}
-			after = page[page.length - 1].user.id
-		}
-		return membersWithRole
-	}
-
-	async function loadMembers(accessToken: string) {
-		try {
-			members.value = await fetchMembersWithRole(accessToken)
-		} catch {
-			members.value = []
-		}
-	}
-
-	function hasRequiredRole(roles: string[]): boolean {
-		return roles.includes(config.discord.roleId)
+	async function loadMembers(_accessToken: string) {
+		members.value = []
 	}
 
 	async function establishSession(token: DiscordTokenResponse) {
 		const userAccount = await fetchUser(token.access_token)
-		const roles = await fetchMemberRoles(token.access_token)
-
-		if (!hasRequiredRole(roles)) {
-			user.value = userAccount
-			errorMessage.value = `Missing required role (${config.discord.roleId}) in guild ${config.discord.guildId}.`
-			status.value = 'denied'
-			return null
-		}
 
 		const session: StoredSession = {
 			token,
@@ -222,7 +162,11 @@ export const useDiscord = defineStore('discord', () => {
 		persistSession(session)
 
 		user.value = session.user
-		await loadMembers(token.access_token)
+		try {
+			await loadMembers(token.access_token)
+		} catch {
+			members.value = []
+		}
 		errorMessage.value = ''
 		status.value = 'authorized'
 		return session
@@ -238,18 +182,14 @@ export const useDiscord = defineStore('discord', () => {
 		status.value = 'loading'
 		try {
 			const userAccount = await withValidToken(stored, (token) => fetchUser(token))
-			const roles = await withValidToken(stored, (token) => fetchMemberRoles(token))
-
-			if (!hasRequiredRole(roles)) {
-				user.value = userAccount
-				errorMessage.value = `Missing required role (${config.discord.roleId}) in guild ${config.discord.guildId}.`
-				status.value = 'denied'
-				return
-			}
 
 			stored.user = userAccount
 			persistSession(stored)
-			await loadMembers(stored.token.access_token)
+			try {
+				await loadMembers(stored.token.access_token)
+			} catch {
+				members.value = []
+			}
 
 			user.value = stored.user
 			errorMessage.value = ''
@@ -259,7 +199,6 @@ export const useDiscord = defineStore('discord', () => {
 				clearSession()
 				return
 			}
-			// Network errors shouldn't lock the user out of an already-verified session.
 			user.value = stored.user
 			errorMessage.value = ''
 			status.value = 'authorized'

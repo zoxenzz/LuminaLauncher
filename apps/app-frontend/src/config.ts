@@ -12,12 +12,10 @@ const archonBaseUrl = trimTrailingSlash(
 // Replace these placeholders with your real values (see AGENTS.md / README):
 //   VITE_DISCORD_CLIENT_ID      - OAuth2 client ID from https://discord.com/developers/applications
 //   VITE_DISCORD_CLIENT_SECRET  - OAuth2 client secret for the same application
-//   VITE_DISCORD_GUILD_ID       - ID of the Discord server users must belong to
-//   VITE_DISCORD_ROLE_ID        - ID of the role users must have to use the launcher
+//   VITE_DISCORD_GUILD_ID       - ID of the Discord server (optional, used for member listing)
 const discordClientId = import.meta.env.VITE_DISCORD_CLIENT_ID || 'your_discord_client_id'
 const discordClientSecret = import.meta.env.VITE_DISCORD_CLIENT_SECRET || 'your_discord_client_secret'
 const discordGuildId = import.meta.env.VITE_DISCORD_GUILD_ID || 'your_discord_guild_id'
-const discordRoleId = import.meta.env.VITE_DISCORD_ROLE_ID || 'your_discord_role_id'
 
 export const config = {
 	siteUrl,
@@ -30,6 +28,5 @@ export const config = {
 		clientId: discordClientId,
 		clientSecret: discordClientSecret,
 		guildId: discordGuildId,
-		roleId: discordRoleId,
 	},
 }
