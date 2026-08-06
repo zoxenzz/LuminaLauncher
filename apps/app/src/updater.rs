@@ -50,6 +50,8 @@ const BLACKLIST_PREFIXES: &[&str] = &[
 ];
 
 const PROGRESS_EMIT_INTERVAL: Duration = Duration::from_millis(100);
+
+#[cfg(target_os = "windows")]
 const WINDOWS_EXIT_GRACE: Duration = Duration::from_millis(1500);
 
 // ---------------------------------------------------------------------------
@@ -629,8 +631,8 @@ async fn replace_appimage(app: &AppHandle, path: &Path) -> Result<(), UpdateErro
         "[updater] Replaced {}; restarting into the new version",
         current_exe.display()
     );
-    app.restart();
-    Ok(())
+    // `restart` diverges (`-> !`), so it must be the tail expression.
+    app.restart()
 }
 
 #[cfg(target_os = "linux")]
