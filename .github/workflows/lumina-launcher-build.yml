@@ -225,33 +225,8 @@ jobs:
           VERSION="${VERSION#beta-}"
           VERSION="${VERSION#v}"
           VERSION="${VERSION%%-*}"
-          export VERSION
           echo "Derived app version: ${VERSION}"
-          node -e '
-            const fs = require("fs");
-            const version = process.env.VERSION;
-            for (const file of ["apps/app/tauri.conf.json", "apps/app-frontend/package.json"]) {
-              const data = JSON.parse(fs.readFileSync(file, "utf8"));
-              data.version = version;
-              fs.writeFileSync(file, JSON.stringify(data, null, "\t") + "\n");
-            }
-
-            // Keep the workspace lockfile in sync with the bumped Cargo.toml
-            // versions so the build doesn't silently rewrite it.
-            const lockPath = "Cargo.lock";
-            const lock = fs.readFileSync(lockPath, "utf8");
-            const updated = lock
-              .split(/\n(?=\[\[package\]\])/)
-              .map((block) => {
-                if (/name = "(theseus|theseus_gui)"/.test(block)) {
-                  return block.replace(/^version = \".*\"/m, `version = \"${version}\"`);
-                }
-                return block;
-              })
-              .join("\n");
-            fs.writeFileSync(lockPath, updated);
-          '
-          sed -i "s/^version = .*/version = \"${VERSION}\"/" apps/app/Cargo.toml packages/app-lib/Cargo.toml
+          node scripts/derive-version.mjs "${VERSION}"
 
       - name: 📦 Install dependencies
         shell: bash
