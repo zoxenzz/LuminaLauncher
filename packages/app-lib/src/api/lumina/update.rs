@@ -9,12 +9,21 @@ pub(crate) async fn get_resource(
     local_filename: &str,
     os_type: &str,
     auto_update_supported: bool,
+    token: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let download_dir = dirs::download_dir()
         .ok_or("[Lumina] • Failed to determine download directory")?;
     let full_path = download_dir.join(local_filename);
 
-    let response = reqwest::get(download_url).await?;
+    // Private repos need an Authorization header on the release asset download.
+    let mut request = reqwest::Client::new().get(download_url);
+    if let Some(token) = token.as_deref().filter(|t| !t.is_empty()) {
+        request = request.bearer_auth(token);
+    }
+    let response = request.send().await?;
+    // Fail loudly instead of writing an error body (e.g. 401 from a bad/expired
+    // token) to disk as the "installer" file.
+    let response = response.error_for_status()?;
     let bytes = response.bytes().await?;
     let mut dest_file = AsyncFile::create(&full_path).await?;
     dest_file.write_all(&bytes).await?;

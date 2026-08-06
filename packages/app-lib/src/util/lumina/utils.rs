@@ -219,6 +219,7 @@ pub async fn init_update_launcher(
     local_filename: &str,
     os_type: &str,
     auto_update_supported: bool,
+    token: Option<String>,
 ) -> Result<()> {
     tracing::info!("[Lumina] • Initialize downloading from • {:?}", download_url);
     tracing::info!("[Lumina] • Save local file name • {:?}", local_filename);
@@ -230,6 +231,7 @@ pub async fn init_update_launcher(
         local_filename,
         os_type,
         auto_update_supported,
+        token,
     )
     .await
     {

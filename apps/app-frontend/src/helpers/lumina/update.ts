@@ -19,6 +19,11 @@ export const LAUNCHER_REPOSITORY_URL = `${import.meta.env.GITHUB_URL}zoxenzz/Lum
 export const LAUNCHER_RELEASES_URL = `${LAUNCHER_REPOSITORY_URL}releases`
 const LAUNCHER_LATEST_RELEASE_API = `${import.meta.env.GITHUB_API_URL}repos/zoxenzz/LuminaLauncher/releases/latest`
 
+// Optional fine-grained PAT (Contents: Read, scoped to zoxenzz/LuminaLauncher only)
+// used to authenticate against the PRIVATE update repo. Bake it in via the
+// GITHUB_TOKEN env var (see packages/app-lib/.env and the CI workflow).
+const GITHUB_TOKEN: string | undefined = import.meta.env.GITHUB_TOKEN
+
 export const isUpdateInstalling = ref(false)
 export const isUpdateAvailable = ref(false)
 export const isAutoUpdating = ref(false)
@@ -49,7 +54,9 @@ export async function fetchRemote(): Promise<void> {
 	currentOS.value = (await getOS()).toLowerCase()
 
 	try {
-		const response = await fetch(LAUNCHER_LATEST_RELEASE_API)
+		const response = await fetch(LAUNCHER_LATEST_RELEASE_API, {
+			headers: GITHUB_TOKEN ? { Authorization: `Bearer ${GITHUB_TOKEN}` } : undefined,
+		})
 		if (!response.ok) {
 			throw new Error(String(response.status))
 		}
@@ -144,6 +151,7 @@ export async function downloadLatestRelease(): Promise<boolean> {
 			installer.name,
 			currentOS.value,
 			true,
+			GITHUB_TOKEN,
 		)
 	} finally {
 		isUpdateInstalling.value = false

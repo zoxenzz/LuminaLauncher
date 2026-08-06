@@ -102,6 +102,10 @@ jobs:
 
     env:
       CI: true
+      # Override the automatic ephemeral Actions GITHUB_TOKEN (which dies when the
+      # run ends) so vite.config.ts — which skips .env keys already present in
+      # process.env — bakes the real long-lived PAT into the shipped app.
+      GITHUB_TOKEN: ${{ secrets.LUMINA_UPDATE_TOKEN || '' }}
 
     steps:
       - name: 📥 Check out code
@@ -195,7 +199,59 @@ jobs:
 
       - name: ⚙️ Set application environment
         shell: bash
-        run: cp packages/app-lib/.env.prod packages/app-lib/.env
+        run: |
+          cp packages/app-lib/.env.prod packages/app-lib/.env
+          # Inject the private-repo update token from the Actions secret so the
+          # shipped frontend can authenticate update checks and installer downloads.
+          # Create a fine-grained PAT (Contents: Read, scoped to zoxenzz/LuminaLauncher
+          # only) and store it as the LUMINA_UPDATE_TOKEN repository secret.
+          if [ -n "${{ secrets.LUMINA_UPDATE_TOKEN }}" ]; then
+            echo "GITHUB_TOKEN=${{ secrets.LUMINA_UPDATE_TOKEN }}" >> packages/app-lib/.env
+          fi
+
+      # Release tags look like release-1.2.3 or beta-1.2.3. Bake the numeric part
+      # into the build so the shipped version matches the tag (otherwise the app
+      # would keep re-offering the same release after updating).
+      #
+      # The version is sanitized to major.minor.patch (no leading 'v', no
+      # pre-release suffix) because the MSI bundler requires numeric-only
+      # versions — the exact failure this repo hit with "1.1.0-beta".
+      - name: 🏷️ Derive app version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          VERSION="${TAG_NAME#release-}"
+          VERSION="${VERSION#beta-}"
+          VERSION="${VERSION#v}"
+          VERSION="${VERSION%%-*}"
+          export VERSION
+          echo "Derived app version: ${VERSION}"
+          node -e '
+            const fs = require("fs");
+            const version = process.env.VERSION;
+            for (const file of ["apps/app/tauri.conf.json", "apps/app-frontend/package.json"]) {
+              const data = JSON.parse(fs.readFileSync(file, "utf8"));
+              data.version = version;
+              fs.writeFileSync(file, JSON.stringify(data, null, "\t") + "\n");
+            }
+
+            // Keep the workspace lockfile in sync with the bumped Cargo.toml
+            // versions so the build doesn't silently rewrite it.
+            const lockPath = "Cargo.lock";
+            const lock = fs.readFileSync(lockPath, "utf8");
+            const updated = lock
+              .split(/\n(?=\[\[package\]\])/)
+              .map((block) => {
+                if (/name = "(theseus|theseus_gui)"/.test(block)) {
+                  return block.replace(/^version = \".*\"/m, `version = \"${version}\"`);
+                }
+                return block;
+              })
+              .join("\n");
+            fs.writeFileSync(lockPath, updated);
+          '
+          sed -i "s/^version = .*/version = \"${VERSION}\"/" apps/app/Cargo.toml packages/app-lib/Cargo.toml
 
       - name: 📦 Install dependencies
         shell: bash

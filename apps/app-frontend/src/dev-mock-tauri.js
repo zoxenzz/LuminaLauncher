@@ -88,7 +88,7 @@ if (window.__TAURI_INTERNALS__) {
 		invoke: async (cmd, _args = {}) => {
 			switch (cmd) {
 				case 'plugin:app|version':
-					return '1.1.0-beta'
+					return '1.2.0'
 				case 'plugin:settings|settings_get':
 					return DEFAULT_SETTINGS
 				case 'plugin:settings|settings_set':
