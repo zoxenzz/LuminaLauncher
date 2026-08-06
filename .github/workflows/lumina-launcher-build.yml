@@ -237,10 +237,14 @@ jobs:
               -F draft=false \
               -F prerelease=false >/dev/null 2>&1 || true
           fi
-          gh release upload "${{ github.ref_name }}" \
-            target/${{ matrix.target }}/release/bundle/nsis/*.exe \
-            target/${{ matrix.target }}/release/bundle/msi/*.msi \
-            target/${{ matrix.target }}/release/bundle/dmg/*.dmg \
-            target/${{ matrix.target }}/release/bundle/deb/*.deb \
-            target/${{ matrix.target }}/release/bundle/appimage/*.AppImage \
-            --clobber
+          # Each platform only produces its own bundle types (Linux: deb/AppImage,
+          # Windows: exe/msi, macOS: dmg). Unmatched globs would be passed to gh
+          # as literal paths and fail the upload, so collect them with nullglob.
+          shopt -s nullglob
+          BUNDLE_DIR="target/${{ matrix.target }}/release/bundle"
+          FILES=("$BUNDLE_DIR"/nsis/*.exe "$BUNDLE_DIR"/msi/*.msi "$BUNDLE_DIR"/dmg/*.dmg "$BUNDLE_DIR"/deb/*.deb "$BUNDLE_DIR"/appimage/*.AppImage)
+          if [ ${#FILES[@]} -eq 0 ]; then
+            echo "⚠️ No installers found to upload — skipping."
+            exit 0
+          fi
+          gh release upload "${{ github.ref_name }}" "${FILES[@]}" --clobber
