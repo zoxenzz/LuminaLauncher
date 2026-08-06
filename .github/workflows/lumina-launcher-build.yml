@@ -232,7 +232,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq .id 2>/dev/null)
+          # gh api exits non-zero on 404 (release not created yet); without
+          # `|| true` the failed substitution kills the step under set -e
+          # before find-or-create can run.
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq .id 2>/dev/null) || true
           if [ -z "$RELEASE_ID" ]; then
             # Concurrent matrix jobs may race to create it; ignore "already exists".
             gh api --method POST "repos/${{ github.repository }}/releases" \
