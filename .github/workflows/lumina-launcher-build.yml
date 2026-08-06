@@ -34,49 +34,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Creates the GitHub Release first (only when a tag is pushed) so all
-  # matrix builds can publish their installers to it without racing.
-  create-release:
-    name: 📦 Create GitHub Release
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      release_id: ${{ steps.create_release.outputs.id }}
-    steps:
-      - name: 🏷️ Check if pushing a tag
-        id: is_tag
-        shell: bash
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "on_tag=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "on_tag=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      # Idempotent release creation via the GitHub CLI (pre-installed and
-      # pre-authenticated on runners). Finds the release by tag if it already
-      # exists, otherwise creates it — so re-running a tag never explodes.
-      - name: 🚀 Create release (if not already present)
-        id: create_release
-        if: steps.is_tag.outputs.on_tag == 'true'
-        shell: bash
-        run: |
-          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq .id 2>/dev/null)
-          if [ -z "$RELEASE_ID" ]; then
-            RELEASE_ID=$(gh api --method POST "repos/${{ github.repository }}/releases" \
-              -f "tag_name=${{ github.ref_name }}" \
-              -f "name=${{ github.ref_name }}" \
-              -F generate_release_notes=true \
-              -F draft=false \
-              -F prerelease=false \
-              --jq .id)
-          fi
-          echo "id=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
-
   build:
     name: ${{ matrix.label }}
-    needs: create-release
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: write
@@ -262,14 +221,26 @@ jobs:
 
       # Publish installers to the GitHub Release so the in-app auto-updater
       # (helpers/lumina/update.ts) can find them via the releases API.
+      # Find-or-create the release and upload via gh CLI — robust, idempotent,
+      # and not dependent on a separate release-creation job.
       - name: 🚀 Publish bundles to GitHub Release
-        if: needs.create-release.outputs.release_id != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          release_id: ${{ needs.create-release.outputs.release_id }}
-          files: |
-            target/${{ matrix.target }}/release/bundle/nsis/*.exe
-            target/${{ matrix.target }}/release/bundle/msi/*.msi
-            target/${{ matrix.target }}/release/bundle/dmg/*.dmg
-            target/${{ matrix.target }}/release/bundle/deb/*.deb
-            target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq .id 2>/dev/null)
+          if [ -z "$RELEASE_ID" ]; then
+            # Concurrent matrix jobs may race to create it; ignore "already exists".
+            gh api --method POST "repos/${{ github.repository }}/releases" \
+              -f "tag_name=${{ github.ref_name }}" \
+              -f "name=${{ github.ref_name }}" \
+              -F generate_release_notes=true \
+              -F draft=false \
+              -F prerelease=false >/dev/null 2>&1 || true
+          fi
+          gh release upload "${{ github.ref_name }}" \
+            target/${{ matrix.target }}/release/bundle/nsis/*.exe \
+            target/${{ matrix.target }}/release/bundle/msi/*.msi \
+            target/${{ matrix.target }}/release/bundle/dmg/*.dmg \
+            target/${{ matrix.target }}/release/bundle/deb/*.deb \
+            target/${{ matrix.target }}/release/bundle/appimage/*.AppImage \
+            --clobber
