@@ -232,21 +232,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          # gh api exits non-zero on 404 (release not created yet); without
-          # `|| true` the failed substitution kills the step under set -e
-          # before find-or-create can run.
-          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases/tags/${{ github.ref_name }}" --jq .id 2>/dev/null) || true
-          if [ -z "$RELEASE_ID" ]; then
-            # Concurrent matrix jobs may race to create it; ignore "already exists".
-            # Use -f (type-inferred), NOT -F (raw string): -F sends booleans as
-            # "true"/"false" strings, which the Releases API rejects with 422.
-            gh api --method POST "repos/${{ github.repository }}/releases" \
-              -f "tag_name=${{ github.ref_name }}" \
-              -f "name=${{ github.ref_name }}" \
-              -f generate_release_notes=true \
-              -f draft=false \
-              -f prerelease=false >/dev/null 2>&1 || true
-          fi
+          # Create the release with curl + explicit JSON booleans. gh api sends
+          # ALL -f/-F values as strings ("false"/"true") — verified against
+          # gh 2.97 — which the Releases API rejects with 422. Concurrent matrix
+          # jobs racing here just get a harmless 422 (already exists).
+          curl -s -o /dev/null -X POST \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            -H 'Content-Type: application/json' \
+            -d "{\"tag_name\":\"${{ github.ref_name }}\",\"name\":\"${{ github.ref_name }}\",\"generate_release_notes\":true,\"draft\":false,\"prerelease\":false}" \
+            "https://api.github.com/repos/${{ github.repository }}/releases" || true
           # Each platform only produces its own bundle types (Linux: deb/AppImage,
           # Windows: exe/msi, macOS: dmg). Unmatched globs would be passed to gh
           # as literal paths and fail the upload, so collect them with nullglob.
