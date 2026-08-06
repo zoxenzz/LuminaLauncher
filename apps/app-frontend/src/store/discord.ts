@@ -29,9 +29,25 @@ interface StoredSession {
 	user: DiscordUser
 	issuedAt: number
 }
-
 const isUnauthorized = (error: unknown) =>
 	typeof error === 'object' && error !== null && 'status' in error && error.status === 401
+
+/** Rejects if the wrapped promise does not settle in time (network hangs). */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => reject(new Error('Discord request timed out')), ms)
+		promise.then(
+			(value) => {
+				clearTimeout(timer)
+				resolve(value)
+			},
+			(error) => {
+				clearTimeout(timer)
+				reject(error)
+			},
+		)
+	})
+}
 
 function readStoredSession(): StoredSession | null {
 	try {
@@ -50,7 +66,6 @@ export const useDiscord = defineStore('discord', () => {
 	const isLoggingIn = ref(false)
 
 	const isAuthorized = computed(() => status.value === 'authorized')
-	const requiresGate = computed(() => status.value !== 'authorized')
 
 	const username = computed(() => user.value?.global_name || user.value?.username || 'Unknown user')
 
@@ -109,7 +124,10 @@ export const useDiscord = defineStore('discord', () => {
 		session: StoredSession,
 		fetchFn: (token: string) => Promise<T>,
 	): Promise<T> {
-		if (session.token.refresh_token && Date.now() - session.issuedAt >= session.token.expires_in * 1000 - 60000) {
+		if (
+			session.token.refresh_token &&
+			Date.now() - session.issuedAt >= session.token.expires_in * 1000 - 60000
+		) {
 			const refreshed = await refreshToken(session.token.refresh_token)
 			session.token = {
 				...refreshed,
@@ -152,7 +170,7 @@ export const useDiscord = defineStore('discord', () => {
 	}
 
 	async function establishSession(token: DiscordTokenResponse) {
-		const userAccount = await fetchUser(token.access_token)
+		const userAccount = await withTimeout(fetchUser(token.access_token), 8000)
 
 		const session: StoredSession = {
 			token,
@@ -181,7 +199,12 @@ export const useDiscord = defineStore('discord', () => {
 
 		status.value = 'loading'
 		try {
-			const userAccount = await withValidToken(stored, (token) => fetchUser(token))
+			// Never leave the app in a perpetual "loading" state: if Discord is
+			// unreachable, fall back to the stored session (best effort).
+			const userAccount = await withTimeout(
+				withValidToken(stored, (token) => fetchUser(token)),
+				8000,
+			)
 
 			stored.user = userAccount
 			persistSession(stored)
@@ -255,7 +278,6 @@ export const useDiscord = defineStore('discord', () => {
 		errorMessage,
 		isLoggingIn,
 		isAuthorized,
-		requiresGate,
 		username,
 		avatarUrl,
 		memberAvatar,

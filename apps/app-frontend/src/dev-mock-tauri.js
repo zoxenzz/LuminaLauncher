@@ -7,21 +7,9 @@
 if (window.__TAURI_INTERNALS__) {
 	// Real Tauri bridge present — do nothing.
 } else {
-	// Seed a mock Discord session so the sign-in gate does not block UI
-	// interaction while previewing (network failures are tolerated by the
-	// discord store and fall back to authorized).
-	try {
-		localStorage.setItem(
-			'lumina-launcher.discord-session',
-			JSON.stringify({
-				token: { access_token: 'mock', token_type: 'Bearer', expires_in: 3600, scope: 'identify', refresh_token: null },
-				user: { id: 'mock', username: 'Preview User', global_name: 'Preview User' },
-				issuedAt: Date.now(),
-			}),
-		)
-	} catch {
-		/* ignore */
-	}
+	// No Discord session is seeded: the launcher is public, so previews start
+	// unauthenticated and the dock shows the "Sign in with Discord" button.
+	// `discord_login` below simulates the OAuth flow completing.
 	const DEFAULT_SETTINGS = {
 		max_concurrent_downloads: 4,
 		max_concurrent_writes: 4,
@@ -120,7 +108,12 @@ if (window.__TAURI_INTERNALS__) {
 					// state can be previewed in a plain browser.
 					if (new URLSearchParams(window.location.search).has('mockUpdate')) {
 						return {
-							status: { type: 'update_available', version: '1.2.2', notes: 'Mock release', size: 12345678 },
+							status: {
+								type: 'update_available',
+								version: '1.2.2',
+								notes: 'Mock release',
+								size: 12345678,
+							},
 							release: {
 								tag_name: 'release-1.2.2',
 								name: 'Mock 1.2.2',
@@ -130,7 +123,8 @@ if (window.__TAURI_INTERNALS__) {
 										id: 1,
 										name: 'Lumina-Launcher-1.2.2-x64-setup.exe',
 										url: 'https://api.github.com/repos/zoxenzz/LuminaLauncher/releases/assets/1',
-										browserDownloadUrl: 'https://github.com/zoxenzz/LuminaLauncher/releases/download/release-1.2.2/Lumina-Launcher-1.2.2-x64-setup.exe',
+										browserDownloadUrl:
+											'https://github.com/zoxenzz/LuminaLauncher/releases/download/release-1.2.2/Lumina-Launcher-1.2.2-x64-setup.exe',
 										contentType: 'application/x-msdownload',
 										size: 12345678,
 									},
@@ -143,6 +137,16 @@ if (window.__TAURI_INTERNALS__) {
 					return '/mock/updates/mock-installer'
 				case 'updater_install':
 					return null
+				case 'plugin:discord-auth|discord_login':
+					// Simulate a successful Discord OAuth so the dock's sign-in
+					// button can be exercised in a plain browser.
+					return {
+						access_token: 'mock',
+						token_type: 'Bearer',
+						expires_in: 3600,
+						scope: 'identify',
+						refresh_token: null,
+					}
 				case 'plugin:event|listen':
 				case 'plugin:window|on_resized':
 				case 'plugin:window|on_moved':

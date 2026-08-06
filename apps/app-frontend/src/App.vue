@@ -22,6 +22,7 @@ import {
 	RightArrowIcon,
 	ServerStackIcon,
 	SettingsIcon,
+	SpinnerIcon,
 	UserIcon,
 	WorldIcon,
 	XIcon,
@@ -57,13 +58,21 @@ import { fetch as tauriFetch } from '@tauri-apps/plugin-http'
 import { openUrl } from '@tauri-apps/plugin-opener'
 import { type } from '@tauri-apps/plugin-os'
 import { $fetch } from 'ofetch'
-import { computed, nextTick, onErrorCaptured, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+import {
+	computed,
+	nextTick,
+	onErrorCaptured,
+	onMounted,
+	onUnmounted,
+	provide,
+	ref,
+	watch,
+} from 'vue'
 import { RouterView, useRoute, useRouter } from 'vue-router'
 
 import AccountsCard from '@/components/ui/AccountsCard.vue'
 import AppActionBar from '@/components/ui/AppActionBar.vue'
 import Breadcrumbs from '@/components/ui/Breadcrumbs.vue'
-import DiscordGate from '@/components/ui/discord/DiscordGate.vue'
 import DiscordPanel from '@/components/ui/discord/DiscordPanel.vue'
 import ErrorModal from '@/components/ui/ErrorModal.vue'
 import AddServerToInstanceModal from '@/components/ui/install_flow/AddServerToInstanceModal.vue'
@@ -1166,8 +1175,14 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 					</template>
 					<template #sign-out> <LogOutIcon /> Sign out </template>
 				</OverflowMenu>
-				<NavButton v-else v-tooltip.top="'Sign in with Discord'" :to="() => signIn()">
-					<LogInIcon class="text-brand" />
+				<NavButton
+					v-else
+					v-tooltip.top="'Sign in with Discord'"
+					:to="() => signIn()"
+					:disabled="discord.isLoggingIn"
+				>
+					<SpinnerIcon v-if="discord.isLoggingIn" class="size-5 animate-spin text-brand" />
+					<LogInIcon v-else class="text-brand" />
 				</NavButton>
 			</div>
 		</div>
@@ -1373,7 +1388,6 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 	/>
 	<InstallToPlayModal ref="installToPlayModal" />
 	<UpdateToPlayModal ref="updateToPlayModal" />
-	<DiscordGate />
 </template>
 
 <style lang="scss" scoped>

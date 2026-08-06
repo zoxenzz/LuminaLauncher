@@ -512,39 +512,6 @@
 	"app.world.world-item.players-online": {
 		"message": "{count} online"
 	},
-	"discord.gate.config-note": {
-		"message": "Discord is not configured yet. Add your Discord application, guild and role IDs to the launcher configuration to enable access."
-	},
-	"discord.gate.denied.body": {
-		"message": "Your Discord account does not have the role required to use the Lumina Launcher. Join the community server and request the member role to get access."
-	},
-	"discord.gate.denied.header": {
-		"message": "You don't have access"
-	},
-	"discord.gate.loading": {
-		"message": "Checking access..."
-	},
-	"discord.gate.sign-in": {
-		"message": "Sign in with Discord"
-	},
-	"discord.gate.sign-in.description": {
-		"message": "Lumina Launcher uses Discord as its account system. You need to be a member of the community server with the required role to use the launcher."
-	},
-	"discord.gate.sign-out": {
-		"message": "Sign out"
-	},
-	"discord.gate.subtitle": {
-		"message": "Sign in with Discord to continue."
-	},
-	"discord.gate.title": {
-		"message": "Welcome to the Lumina Launcher"
-	},
-	"discord.gate.try-again": {
-		"message": "Try again"
-	},
-	"discord.gate.waiting-for-sign-in": {
-		"message": "Waiting for you to sign in at the browser window that just opened... You can close the page when done."
-	},
 	"discord.panel.connected-as": {
 		"message": "Connected as"
 	},
