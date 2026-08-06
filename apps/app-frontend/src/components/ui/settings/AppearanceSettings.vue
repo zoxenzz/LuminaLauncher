@@ -315,10 +315,18 @@ watch(
 .settings-group {
 	display: flex;
 	flex-direction: column;
-	border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-brand) 26%, transparent);
 	border-radius: 1rem;
-	background: color-mix(in srgb, var(--color-raised-bg) 55%, transparent);
-	box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-brand) 8%, transparent);
+	background:
+		linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--color-brand) 8%, transparent),
+			transparent 72%
+		),
+		color-mix(in srgb, var(--color-raised-bg) 68%, transparent);
+	box-shadow:
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 13%, transparent),
+		0 6px 18px rgba(0, 0, 0, 0.22);
 	overflow: hidden;
 }
 
@@ -328,7 +336,7 @@ watch(
 	justify-content: space-between;
 	gap: 1rem;
 	padding: 1rem 1.25rem;
-	border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 10%, transparent);
+	border-bottom: 1px solid color-mix(in srgb, var(--color-brand) 15%, transparent);
 
 	&:last-child {
 		border-bottom: 0;

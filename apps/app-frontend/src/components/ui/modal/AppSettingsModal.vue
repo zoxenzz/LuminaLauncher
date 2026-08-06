@@ -5,7 +5,7 @@ import {
 	GameIcon,
 	GaugeIcon,
 	LanguagesIcon,
-	LuminaLauncherLogo,
+	LuminaLogo,
 	PaintbrushIcon,
 	RefreshCwIcon,
 	RotateClockwiseIcon,
@@ -209,7 +209,7 @@ const messages = defineMessages({
 						:aria-label="`Lumina Launcher v${displayedVersion}`"
 						@click="devModeCount"
 					>
-						<LuminaLauncherLogo class="size-5" />
+						<LuminaLogo class="h-6 w-6" />
 					</button>
 					<div class="min-w-0">
 						<p class="settings-footer-name m-0">Lumina Launcher</p>

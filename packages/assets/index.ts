@@ -138,12 +138,14 @@ export const MinecraftServerIcon = _MinecraftServerIcon
 
 // This code is modified by Lumina Launcher
 import _LuminaLauncherLogo from './icons/lumina/lumina-logo.svg?component'
+import _LuminaMarkLogo from './icons/lumina/lumina-mark.svg?component'
 import _ElyByIcon from './icons/lumina/elyby-icon.svg?component'
 import _MicrosoftIcon from './icons/lumina/microsoft.svg?component'
 import _OfflineIcon from './icons/lumina/offline.svg?component'
 export const OfflineIcon = _OfflineIcon
 export const MicrosoftIcon = _MicrosoftIcon
 export const LuminaLauncherLogo = _LuminaLauncherLogo
+export const LuminaLogo = _LuminaMarkLogo
 export const ElyByIcon = _ElyByIcon
 
 // Skin Models

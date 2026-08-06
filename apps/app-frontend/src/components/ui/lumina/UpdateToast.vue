@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DownloadIcon, SpinnerIcon, XIcon } from '@modrinth/assets'
+import { LuminaLogo, SpinnerIcon, XIcon } from '@modrinth/assets'
 import { ProgressBar, defineMessages, useVIntl } from '@modrinth/ui'
 
 import { useUpdater } from '@/store/updater'
@@ -82,7 +82,7 @@ const messages = defineMessages({
 
 			<!-- 2. Update available (manual mode) -->
 			<div v-else-if="updater.phase === 'available'" class="update-toast-body">
-				<DownloadIcon class="update-toast-icon" />
+				<LuminaLogo class="update-toast-logo" />
 				<div class="update-toast-text">
 					<p class="update-toast-title m-0">
 						{{ formatMessage(messages.available, { version: updater.version }) }}
@@ -105,7 +105,7 @@ const messages = defineMessages({
 
 			<!-- 3. Downloading with progress -->
 			<div v-else-if="updater.phase === 'downloading'" class="update-toast-body">
-				<DownloadIcon class="update-toast-icon" />
+				<LuminaLogo class="update-toast-logo" />
 				<div class="update-toast-text">
 					<p class="update-toast-title m-0">
 						{{ formatMessage(messages.downloading, { version: updater.version }) }}
@@ -126,14 +126,25 @@ const messages = defineMessages({
 			<!-- 5. Installed — restart to apply -->
 			<div v-else-if="updater.isReadyToRestart" class="update-toast-body">
 				<span class="update-toast-check" aria-hidden="true">
-					<svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+					<svg
+						viewBox="0 0 24 24"
+						class="size-4"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="3"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
 						<polyline points="20 6 9 17 4 12" />
 					</svg>
 				</span>
 				<div class="update-toast-text">
 					<p class="update-toast-title m-0">{{ formatMessage(messages.readyTitle) }}</p>
 					<p class="m-0 text-secondary text-sm">{{ formatMessage(messages.readyText) }}</p>
-					<p v-if="updater.autoRestart && updater.restartInSeconds > 0" class="update-toast-countdown m-0">
+					<p
+						v-if="updater.autoRestart && updater.restartInSeconds > 0"
+						class="update-toast-countdown m-0"
+					>
 						{{ formatMessage(messages.restartingSoon, { seconds: updater.restartInSeconds }) }}
 					</p>
 					<div class="update-toast-actions">
@@ -216,6 +227,14 @@ const messages = defineMessages({
 	flex-shrink: 0;
 	margin-top: 0.125rem;
 	color: var(--color-brand);
+}
+
+.update-toast-logo {
+	width: 2.25rem;
+	height: 2.25rem;
+	flex-shrink: 0;
+	border-radius: 0.625rem;
+	filter: drop-shadow(0 4px 12px rgba(223, 183, 67, 0.22));
 }
 
 .update-toast-check {

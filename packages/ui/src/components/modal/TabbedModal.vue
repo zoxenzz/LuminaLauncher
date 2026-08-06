@@ -158,11 +158,17 @@ defineExpose({ show, hide, selectedTab, setTab })
 	min-width: 200px;
 	padding: 0.75rem;
 	border-radius: 1.25rem;
-	border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
 	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent),
-		color-mix(in srgb, var(--color-raised-bg) 88%, transparent);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		radial-gradient(
+			ellipse at top,
+			color-mix(in srgb, var(--color-brand) 11%, transparent),
+			transparent 68%
+		),
+		color-mix(in srgb, var(--color-raised-bg) 94%, transparent);
+	box-shadow:
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 16%, transparent),
+		0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
 .tabbed-modal-tab {
@@ -189,22 +195,25 @@ defineExpose({ show, hide, selectedTab, setTab })
 		transform 150ms ease;
 
 	&:hover {
-		background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+		background: color-mix(in srgb, var(--color-brand) 13%, transparent);
 		color: var(--color-contrast);
+		border-color: color-mix(in srgb, var(--color-brand) 26%, transparent);
 	}
 }
 
 .tabbed-modal-tab-active {
 	color: var(--color-contrast);
-	border-color: color-mix(in srgb, var(--color-brand) 22%, transparent);
+	border-color: color-mix(in srgb, var(--color-brand) 42%, transparent);
 	background:
 		radial-gradient(
 			ellipse at center,
-			color-mix(in srgb, var(--color-brand) 18%, transparent),
-			transparent 72%
+			color-mix(in srgb, var(--color-brand) 24%, transparent),
+			transparent 74%
 		),
-		color-mix(in srgb, var(--color-raised-bg) 55%, transparent);
-	box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-brand) 10%, transparent);
+		color-mix(in srgb, var(--color-raised-bg) 62%, transparent);
+	box-shadow:
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 16%, transparent),
+		0 0 18px color-mix(in srgb, var(--color-brand) 8%, transparent);
 }
 
 .tabbed-modal-content {
@@ -212,10 +221,16 @@ defineExpose({ show, hide, selectedTab, setTab })
 	overflow: hidden;
 	padding: 0.25rem;
 	border-radius: 1.25rem;
-	border: 1px solid color-mix(in srgb, var(--color-brand) 18%, transparent);
+	border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
 	background:
-		linear-gradient(180deg, rgba(255, 255, 255, 0.026), transparent),
-		color-mix(in srgb, var(--color-raised-bg) 88%, transparent);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		radial-gradient(
+			ellipse at top,
+			color-mix(in srgb, var(--color-brand) 9%, transparent),
+			transparent 70%
+		),
+		color-mix(in srgb, var(--color-raised-bg) 94%, transparent);
+	box-shadow:
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 14%, transparent),
+		0 8px 24px rgba(0, 0, 0, 0.28);
 }
 </style>
