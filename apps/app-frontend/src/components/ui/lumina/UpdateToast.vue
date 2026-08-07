@@ -30,11 +30,11 @@ const messages = defineMessages({
 	},
 	installing: {
 		id: 'lumina.app.updater.toast.installing',
-		defaultMessage: 'Installing update…',
+		defaultMessage: 'Installing update v{version}…',
 	},
 	readyTitle: {
 		id: 'lumina.app.updater.toast.ready.title',
-		defaultMessage: 'Update installed',
+		defaultMessage: 'Update v{version} installed',
 	},
 	readyText: {
 		id: 'lumina.app.updater.toast.ready.text',
@@ -120,7 +120,9 @@ const messages = defineMessages({
 			<!-- 4. Installing -->
 			<div v-else-if="updater.isUpdateInstalling" class="update-toast-body">
 				<SpinnerIcon class="update-toast-icon animate-spin" />
-				<p class="update-toast-title m-0">{{ formatMessage(messages.installing) }}</p>
+				<p class="update-toast-title m-0">
+					{{ formatMessage(messages.installing, { version: updater.version }) }}
+				</p>
 			</div>
 
 			<!-- 5. Installed — restart to apply -->
@@ -139,7 +141,9 @@ const messages = defineMessages({
 					</svg>
 				</span>
 				<div class="update-toast-text">
-					<p class="update-toast-title m-0">{{ formatMessage(messages.readyTitle) }}</p>
+					<p class="update-toast-title m-0">
+						{{ formatMessage(messages.readyTitle, { version: updater.version }) }}
+					</p>
 					<p class="m-0 text-secondary text-sm">{{ formatMessage(messages.readyText) }}</p>
 					<p
 						v-if="updater.autoRestart && updater.restartInSeconds > 0"

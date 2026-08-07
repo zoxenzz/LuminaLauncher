@@ -1068,13 +1068,13 @@
 		"message": "Checking…"
 	},
 	"lumina.app.settings.update-installing": {
-		"message": "Installing update..."
+		"message": "Installing update v{version}..."
 	},
 	"lumina.app.settings.update-available": {
-		"message": "Update available"
+		"message": "Update v{version} available"
 	},
 	"lumina.app.settings.restart-to-apply": {
-		"message": "Restart to apply"
+		"message": "Restart to apply v{version}"
 	},
 	"lumina.app.updater.toast.available": {
 		"message": "New version available (v{version})"
@@ -1095,7 +1095,7 @@
 		"message": "Update check failed"
 	},
 	"lumina.app.updater.toast.installing": {
-		"message": "Installing update…"
+		"message": "Installing update v{version}…"
 	},
 	"lumina.app.updater.toast.later": {
 		"message": "Later"
@@ -1104,7 +1104,7 @@
 		"message": "Restart Lumina Launcher to apply the update."
 	},
 	"lumina.app.updater.toast.ready.title": {
-		"message": "Update installed"
+		"message": "Update v{version} installed"
 	},
 	"lumina.app.updater.toast.restart-now": {
 		"message": "Restart now"

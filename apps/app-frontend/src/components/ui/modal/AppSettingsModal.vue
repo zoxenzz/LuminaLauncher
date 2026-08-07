@@ -161,7 +161,7 @@ const messages = defineMessages({
 	},
 	updateInstalling: {
 		id: 'lumina.app.settings.update-installing',
-		defaultMessage: 'Installing update...',
+		defaultMessage: 'Installing update v{version}...',
 	},
 	checkForUpdates: {
 		id: 'lumina.app.settings.check-for-updates',
@@ -173,11 +173,11 @@ const messages = defineMessages({
 	},
 	updateAvailable: {
 		id: 'lumina.app.settings.update-available',
-		defaultMessage: 'Update available',
+		defaultMessage: 'Update v{version} available',
 	},
 	restartToApply: {
 		id: 'lumina.app.settings.restart-to-apply',
-		defaultMessage: 'Restart to apply',
+		defaultMessage: 'Restart to apply v{version}',
 	},
 })
 </script>
@@ -247,7 +247,7 @@ const messages = defineMessages({
 					@click="updater.restartToApply()"
 				>
 					<RotateClockwiseIcon class="size-4" />
-					{{ formatMessage(messages.restartToApply) }}
+					{{ formatMessage(messages.restartToApply, { version: updater.version }) }}
 				</button>
 
 				<button
@@ -257,7 +257,7 @@ const messages = defineMessages({
 					disabled
 				>
 					<SpinnerIcon class="size-4 animate-spin" />
-					{{ formatMessage(messages.updateInstalling) }}
+					{{ formatMessage(messages.updateInstalling, { version: updater.version }) }}
 				</button>
 
 				<button
@@ -267,7 +267,7 @@ const messages = defineMessages({
 					@click="showUpdateModal()"
 				>
 					<DownloadIcon class="size-4" />
-					{{ formatMessage(messages.updateAvailable) }}
+					{{ formatMessage(messages.updateAvailable, { version: updater.version }) }}
 				</button>
 				<!-- phase === 'downloading' renders no action button; the progress
 				     card above already communicates that state -->
