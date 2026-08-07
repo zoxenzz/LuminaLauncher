@@ -71,10 +71,6 @@ jobs:
 
     env:
       CI: true
-      # Override the automatic ephemeral Actions GITHUB_TOKEN (which dies when the
-      # run ends) so vite.config.ts — which skips .env keys already present in
-      # process.env — bakes the real long-lived PAT into the shipped app.
-      GITHUB_TOKEN: ${{ secrets.LUMINA_UPDATE_TOKEN || '' }}
 
     steps:
       - name: 📥 Check out code
@@ -170,13 +166,6 @@ jobs:
         shell: bash
         run: |
           cp packages/app-lib/.env.prod packages/app-lib/.env
-          # Inject the private-repo update token from the Actions secret so the
-          # shipped frontend can authenticate update checks and installer downloads.
-          # Create a fine-grained PAT (Contents: Read, scoped to zoxenzz/LuminaLauncher
-          # only) and store it as the LUMINA_UPDATE_TOKEN repository secret.
-          if [ -n "${{ secrets.LUMINA_UPDATE_TOKEN }}" ]; then
-            echo "GITHUB_TOKEN=${{ secrets.LUMINA_UPDATE_TOKEN }}" >> packages/app-lib/.env
-          fi
           # Inject the Discord OAuth client secret from the Actions secret so it
           # never has to live in the repository. Store it as the
           # DISCORD_CLIENT_SECRET repository secret (Settings → Secrets and
@@ -233,9 +222,9 @@ jobs:
       - name: 🚀 Publish bundles to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash
-        # The job-level GITHUB_TOKEN env is overridden with the read-only update
-        # PAT (baked into the app for update checks); gh needs the auto-generated
-        # write token (permissions: contents: write) to create/upload releases.
+        # The repo is public, so updates are fetched anonymously — no PAT is
+        # baked into the app. gh uses the auto-generated write token
+        # (permissions: contents: write) to create/upload releases.
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |

@@ -2,9 +2,9 @@
 //!
 //! The flow is fully driven from the Rust side:
 //!   1. [`check_for_update`] queries `GET /repos/<owner>/<repo>/releases/latest`
-//!      (with a `Bearer` token when the repo is private), compares the release
-//!      tag against the running version, and selects the installer asset for
-//!      the current OS/arch.
+//!      (the repo is public, so no authentication is needed), compares the
+//!      release tag against the running version, and selects the installer
+//!      asset for the current OS/arch.
 //!   2. [`download_update`] streams that asset to `app_data_dir/updates/`,
 //!      emitting progress, and sanity-checks the result (size + optional
 //!      `.sha256` checksum).
@@ -16,12 +16,6 @@
 //! `ready_to_restart`, `error`) plus a `update://progress` event while
 //! downloading, which the frontend toast subscribes to. All of this runs in
 //! the background — the app stays usable while the check/download proceeds.
-//!
-//! Private-repo token: read from the `GITHUB_TOKEN` env var at *build time*
-//! (CI bakes the `LUMINA_UPDATE_TOKEN` secret into it — see
-//! `.github/workflows/lumina-launcher-build.yml`), with a runtime fallback for
-//! local dev. This is inherently a soft protection: a token shipped inside a
-//! client app can always be extracted.
 
 use serde::{Deserialize, Serialize};
 use serde::ser::SerializeStruct;
@@ -60,10 +54,9 @@ const WINDOWS_EXIT_GRACE: Duration = Duration::from_millis(1500);
 
 /// A release asset, matching the GitHub Releases API shape.
 ///
-/// `browser_download_url` 404s for private repos even with a valid token, so
-/// downloads always go through the API `url` with an
-/// `Accept: application/octet-stream` header (which GitHub redirects to a
-/// signed file URL).
+/// Downloads go through the API `url` with an
+/// `Accept: application/octet-stream` header (GitHub redirects to a signed
+/// file URL), which works for both public and private repos.
 ///
 /// Serializes as camelCase (matching the frontend `LauncherReleaseAsset`
 /// interface) but accepts **both** camelCase and GitHub's snake_case on
@@ -262,14 +255,6 @@ fn select_asset(release: &Release) -> Option<&Asset> {
 // Public API
 // ---------------------------------------------------------------------------
 
-/// Returns the private-repo token baked in at build time, or the one exported
-/// at runtime (dev machines). `None` when the repo is public.
-fn update_token() -> Option<String> {
-    option_env!("GITHUB_TOKEN")
-        .map(str::to_owned)
-        .or_else(|| std::env::var("GITHUB_TOKEN").ok().filter(|t| !t.is_empty()))
-}
-
 /// `app_data_dir/updates/` — where installers are staged before installation.
 fn updates_dir(app: &AppHandle) -> PathBuf {
     app.path()
@@ -324,15 +309,12 @@ fn sanitize_filename(name: &str) -> String {
 pub async fn check_for_update(app: &AppHandle) -> Result<UpdateCheckResult, UpdateError> {
     emit_status(app, &UpdateStatus::Checking);
 
-    let mut request = reqwest::Client::new()
+    let request = reqwest::Client::new()
         .get(format!(
             "{GITHUB_API_BASE}/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
         ))
         .header(reqwest::header::ACCEPT, "application/vnd.github+json")
         .header(reqwest::header::USER_AGENT, USER_AGENT);
-    if let Some(token) = update_token() {
-        request = request.bearer_auth(token);
-    }
 
     let response = request.send().await?;
     if !response.status().is_success() {
@@ -413,15 +395,12 @@ pub async fn download_update(
     let final_path = updates_dir.join(&filename);
     let part_path = updates_dir.join(format!("{filename}.part"));
 
-    // Private repos: the plain browser_download_url 404s, so download via the
-    // API asset URL with `Accept: application/octet-stream`.
-    let mut request = reqwest::Client::new()
+    // Download via the API asset URL with `Accept: application/octet-stream`
+    // (GitHub redirects to a signed file URL; works for public and private).
+    let request = reqwest::Client::new()
         .get(&asset.url)
         .header(reqwest::header::ACCEPT, "application/octet-stream")
         .header(reqwest::header::USER_AGENT, USER_AGENT);
-    if let Some(token) = update_token() {
-        request = request.bearer_auth(token);
-    }
 
     let mut response = request.send().await?;
     if !response.status().is_success() {
@@ -490,13 +469,10 @@ pub async fn download_update(
 /// Verifies a downloaded file against a `.sha256` checksum asset (GitHub
 /// publishes those as sibling assets on the release).
 async fn verify_sha256(path: &Path, sha256_url: &str) -> Result<(), UpdateError> {
-    let mut request = reqwest::Client::new()
+    let request = reqwest::Client::new()
         .get(sha256_url)
         .header(reqwest::header::ACCEPT, "application/octet-stream")
         .header(reqwest::header::USER_AGENT, USER_AGENT);
-    if let Some(token) = update_token() {
-        request = request.bearer_auth(token);
-    }
 
     let text = request.send().await?.error_for_status()?.text().await?;
     let expected = text.split_whitespace().next().unwrap_or_default().to_lowercase();
