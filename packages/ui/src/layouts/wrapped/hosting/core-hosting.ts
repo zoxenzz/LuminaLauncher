@@ -8,7 +8,7 @@ export const coreHosting = {
 	/** Partner name shown across the page. */
 	brandName: 'Core Hosting',
 	/** Main website used by the primary call-to-action buttons. */
-	siteUrl: 'https://billings.corehost.store/',
+	siteUrl: 'https://billings.corehost.store/?ref=LUMINA',
 	/** Community/Discord link used by the secondary call-to-action button. */
 	discordUrl: 'https://discord.gg/gWbKmT43gR',
 	/** Image URLs for the marketing page. Swap these to use your own assets. */
