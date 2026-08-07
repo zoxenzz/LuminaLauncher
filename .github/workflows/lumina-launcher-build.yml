@@ -177,6 +177,13 @@ jobs:
           if [ -n "${{ secrets.LUMINA_UPDATE_TOKEN }}" ]; then
             echo "GITHUB_TOKEN=${{ secrets.LUMINA_UPDATE_TOKEN }}" >> packages/app-lib/.env
           fi
+          # Inject the Discord OAuth client secret from the Actions secret so it
+          # never has to live in the repository. Store it as the
+          # DISCORD_CLIENT_SECRET repository secret (Settings → Secrets and
+          # variables → Actions) with the current value from your Discord app.
+          if [ -n "${{ secrets.DISCORD_CLIENT_SECRET }}" ]; then
+            echo "VITE_DISCORD_CLIENT_SECRET=${{ secrets.DISCORD_CLIENT_SECRET }}" >> packages/app-lib/.env
+          fi
 
       # Release tags look like release-1.2.3 or beta-1.2.3. Bake the numeric part
       # into the build so the shipped version matches the tag (otherwise the app
