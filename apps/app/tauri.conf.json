@@ -9,17 +9,21 @@
 	"bundle": {
 		"active": true,
 		"category": "Game",
-		"copyright": "",
+		"copyright": "Copyright © 2026 zoxenzz",
+		"publisher": "zoxenzz",
 		"targets": "all",
 		"externalBin": [],
 		"icon": ["icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
 		"windows": {
 			"nsis": {
 				"installMode": "currentUser",
-				"installerHooks": "./nsis/hooks.nsi"
+				"installerHooks": "./nsis/hooks.nsi",
+				"headerImage": "./nsis/header.bmp",
+				"sidebarImage": "./nsis/sidebar.bmp",
+				"displayLanguageSelector": true
 			}
 		},
-		"longDescription": "",
+		"longDescription": "Lumina Launcher is a powerful fork of Modrinth (a.k.a. Theseus), reimagined to enhance your Minecraft journey. It focuses on offline authentication for more flexibility and control — play Minecraft without constant online verification, with a user-first approach to modern modded gaming.",
 		"macOS": {
 			"entitlements": "App.entitlements",
 			"exceptionDomain": "",
@@ -42,7 +46,7 @@
 				}
 			}
 		},
-		"shortDescription": "",
+		"shortDescription": "Lumina Launcher — a powerful fork of Modrinth, reimagined to enhance your Minecraft journey.",
 		"linux": {
 			"deb": {
 				"depends": []
@@ -58,7 +62,7 @@
 	"productName": "Lumina Launcher",
 	"version": "1.2.5",
 	"mainBinaryName": "Lumina Launcher",
-	"identifier": "LuminaLauncher",
+	"identifier": "com.lumina.launcher",
 	"plugins": {
 		"deep-link": {
 			"desktop": {

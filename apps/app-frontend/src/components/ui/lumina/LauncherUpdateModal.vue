@@ -159,11 +159,11 @@ defineExpose({
 					<p class="m-0 text-secondary text-sm">{{ formatMessage(messages.updateNoticeLead) }}</p>
 					<p class="m-0 text-sm">
 						{{ formatMessage(messages.updateNoticeWindows) }}
-						<code class="neon-text">%appdata%\Roaming\LuminaLauncher</code>
+						<code class="neon-text">%appdata%\Roaming\com.lumina.launcher</code>
 					</p>
 					<p class="m-0 text-sm">
 						{{ formatMessage(messages.updateNoticeMacos) }}
-						<code class="neon-text">~/Library/Application Support/LuminaLauncher</code>
+						<code class="neon-text">~/Library/Application Support/com.lumina.launcher</code>
 					</p>
 					<p class="m-0 text-sm">{{ formatMessage(messages.updateNoticeOutro) }}</p>
 				</div>
