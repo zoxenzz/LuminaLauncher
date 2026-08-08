@@ -10,6 +10,7 @@ import {
 } from '@modrinth/api-client'
 import {
 	ChangeSkinIcon,
+	CircleAlertIcon,
 	CompassIcon,
 	ExternalIcon,
 	HomeIcon,
@@ -343,6 +344,10 @@ const messages = defineMessages({
 	launcherAutoUpdatingText: {
 		id: 'lumina.app.launcher-update.auto.text',
 		defaultMessage: 'A new version is being downloaded and installed automatically.',
+	},
+	discordNotConfigured: {
+		id: 'lumina.app.discord.not-configured',
+		defaultMessage: "Discord sign-in isn't configured in this build.",
 	},
 })
 
@@ -704,6 +709,15 @@ async function signIn() {
 
 // This code line modified by Lumina Launcher
 const hasPlus = computed(() => !!credentials.value?.user)
+
+// Shown above the dock next to the sign-in button: a clear explanation when
+// Discord OAuth isn't configured in this build, or the last login error.
+const discordSignInMessage = computed(() => {
+	if (!discord.isDiscordConfigured) {
+		return formatMessage(messages.discordNotConfigured)
+	}
+	return discord.errorMessage
+})
 
 async function fetchIntercomToken() {
 	const creds = null
@@ -1186,6 +1200,13 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 				</NavButton>
 			</div>
 		</div>
+		<!-- Floating notice for the Discord sign-in button (e.g. "not configured in this build") -->
+		<Transition name="lumina-dock-alert">
+			<div v-if="discordSignInMessage" class="dock-discord-alert" role="status">
+				<CircleAlertIcon class="size-4 shrink-0" />
+				<span>{{ discordSignInMessage }}</span>
+			</div>
+		</Transition>
 		<div data-tauri-drag-region class="app-grid-statusbar bg-bg-raised h-[--top-bar-height] flex">
 			<div data-tauri-drag-region class="flex min-w-0 flex-1 overflow-hidden p-3">
 				<!-- This code line modified by Lumina Launcher -->
@@ -1477,6 +1498,50 @@ provideAppUpdateDownloadProgress(appUpdateDownload) // [AR Note] If delete this 
 /* Primary cluster uses the sliding pill; per-button ::after pills would double up */
 .dock-cluster-primary :deep(.nav-button-link)::after {
 	display: none;
+}
+
+/* Floating notice hovering just above the dock, e.g. "Discord sign-in isn't
+   configured in this build" — explains why the sign-in button can't work. */
+.dock-discord-alert {
+	position: fixed;
+	z-index: 61;
+	left: 50%;
+	bottom: calc(var(--bottom-bar-height) + 1.5rem);
+	transform: translateX(-50%);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	max-width: min(90vw, 28rem);
+	padding: 0.55rem 0.9rem;
+	border-radius: 999px;
+	background: rgba(16, 14, 12, 0.94);
+	border: 1px solid color-mix(in srgb, var(--color-brand) 30%, transparent);
+	box-shadow:
+		0 16px 40px rgba(0, 0, 0, 0.45),
+		inset 0 1px 0 color-mix(in srgb, var(--color-brand) 14%, transparent);
+	backdrop-filter: blur(20px) saturate(150%);
+	-webkit-backdrop-filter: blur(20px) saturate(150%);
+	color: var(--color-text-default);
+	font-size: 0.8rem;
+	line-height: 1.35;
+	text-align: center;
+	pointer-events: none;
+}
+
+.dock-discord-alert svg {
+	color: var(--color-brand);
+}
+
+.dock-discord-alert-enter-active {
+	animation: lumina-fade-in-up 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dock-discord-alert-leave-active {
+	transition: opacity 0.15s ease;
+}
+
+.dock-discord-alert-leave-to {
+	opacity: 0;
 }
 
 /* If backdrop blur isn't available, fall back to a near-solid pill so icons stay legible */

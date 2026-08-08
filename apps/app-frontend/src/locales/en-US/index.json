@@ -893,6 +893,9 @@
 	"instance.worlds.world_in_use": {
 		"message": "World is in use"
 	},
+	"lumina.app.discord.not-configured": {
+		"message": "Discord sign-in isn't configured in this build."
+	},
 	"lumina.app.launcher-update-modal.error.close-action": {
 		"message": "Close"
 	},

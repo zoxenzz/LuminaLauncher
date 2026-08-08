@@ -67,6 +67,21 @@ export const useDiscord = defineStore('discord', () => {
 
 	const isAuthorized = computed(() => status.value === 'authorized')
 
+	/**
+	 * True only when real Discord OAuth credentials are baked into this build.
+	 * CI builds without the secrets ship placeholder values — attempting to sign
+	 * in would only produce a silent 401, so the UI warns instead of logging in.
+	 */
+	const isDiscordConfigured = computed(() => {
+		const { clientId, clientSecret } = config.discord
+		return (
+			clientId.length > 0 &&
+			clientId !== 'your_discord_client_id' &&
+			clientSecret.length > 0 &&
+			clientSecret !== 'your_discord_client_secret'
+		)
+	})
+
 	const username = computed(() => user.value?.global_name || user.value?.username || 'Unknown user')
 
 	function avatarUrl(size = 128): string | null {
@@ -191,6 +206,13 @@ export const useDiscord = defineStore('discord', () => {
 	}
 
 	async function init() {
+		// No real OAuth credentials in this build: any stored session is stale
+		// (refreshing it would 401), so clear it and skip all Discord calls.
+		if (!isDiscordConfigured.value) {
+			clearSession()
+			return
+		}
+
 		const stored = readStoredSession()
 		if (!stored) {
 			status.value = 'unauthenticated'
@@ -229,6 +251,14 @@ export const useDiscord = defineStore('discord', () => {
 	}
 
 	async function login() {
+		// Placeholder credentials (no DISCORD_CLIENT_SECRET in this build): skip
+		// the OAuth round-trip entirely — it would only fail with a silent 401.
+		if (!isDiscordConfigured.value) {
+			status.value = 'unauthenticated'
+			errorMessage.value = ''
+			return
+		}
+
 		status.value = 'loading'
 		isLoggingIn.value = true
 		errorMessage.value = ''
@@ -278,6 +308,7 @@ export const useDiscord = defineStore('discord', () => {
 		errorMessage,
 		isLoggingIn,
 		isAuthorized,
+		isDiscordConfigured,
 		username,
 		avatarUrl,
 		memberAvatar,
